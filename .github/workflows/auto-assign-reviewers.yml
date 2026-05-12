@@ -1,0 +1,15 @@
+name: automatically-assign-reviewers
+
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+
+jobs:
+  auto-assign:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - uses: kentaro-m/auto-assign-action@v2.0.0
+        with:
+          configuration-path: '.github/auto-mentioned.yml'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
