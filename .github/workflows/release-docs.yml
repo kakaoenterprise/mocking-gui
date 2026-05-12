@@ -1,4 +1,4 @@
-name: Deploy Mocking GUI Docs to GitHub Pages
+name: deploy-mocking-gui-docs
 
 on:
   push:
