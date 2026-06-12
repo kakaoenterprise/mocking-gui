@@ -34,20 +34,19 @@ const ShadowRootPortal = (props: PropsWithChildren<{ styleText?: string }>) => {
     // composed event so document-level listeners receive the real composedPath.
     const bridgePointerDown = (e: Event) => {
       const pe = e as PointerEvent;
-      // When clicking the trigger of an *already-open* Radix overlay (Select,
-      // Popover, DropdownMenu…), skip re-dispatch so DismissableLayer doesn't
-      // race with the trigger's own toggle handler (close → re-open → stuck open).
-      // Only skip for open triggers (`data-state="open"`); clicking a *closed*
-      // trigger must still be bridged so any currently-open overlay can dismiss.
-      const isOpenRadixToggleTrigger = pe
+      // When clicking inside an *already-open* Radix overlay (a trigger such as
+      // Select/Popover/DropdownMenu, or its portaled content such as
+      // SelectContent/DropdownMenuContent), skip re-dispatch. Otherwise the
+      // re-dispatched event reaches DismissableLayer as a second, "outside"
+      // pointerdown (its target is the shadow host, not inside the overlay),
+      // closing the overlay before the click can commit a selection.
+      // Both open triggers and open content carry `data-state="open"`; clicking
+      // a *closed* trigger must still be bridged so any currently-open overlay
+      // elsewhere can dismiss.
+      const isInsideOpenRadixOverlay = pe
         .composedPath()
-        .some(
-          el =>
-            el instanceof Element &&
-            el.getAttribute('data-state') === 'open' &&
-            el.hasAttribute('aria-expanded'),
-        );
-      if (isOpenRadixToggleTrigger) return;
+        .some(el => el instanceof Element && el.getAttribute('data-state') === 'open');
+      if (isInsideOpenRadixOverlay) return;
 
       const synth = new PointerEvent(pe.type, { ...pe, bubbles: true, composed: true });
       host.dispatchEvent(synth);
