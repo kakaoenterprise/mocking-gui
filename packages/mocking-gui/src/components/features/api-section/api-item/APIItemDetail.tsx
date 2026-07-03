@@ -44,7 +44,6 @@ const APIItemDetail = (props: APIItemDetailProps) => {
     }
   }, [body, rawBody]);
 
-  console.log(responseBodyJson, body, rawBody);
   return (
     <section className="w-full px-8 py-2" aria-labelledby="response-details-heading">
       <div className="flex items-center justify-between py-1">
