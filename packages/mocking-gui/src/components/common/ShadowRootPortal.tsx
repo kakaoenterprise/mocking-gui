@@ -40,12 +40,24 @@ const ShadowRootPortal = (props: PropsWithChildren<{ styleText?: string }>) => {
       // re-dispatched event reaches DismissableLayer as a second, "outside"
       // pointerdown (its target is the shadow host, not inside the overlay),
       // closing the overlay before the click can commit a selection.
-      // Both open triggers and open content carry `data-state="open"`; clicking
-      // a *closed* trigger must still be bridged so any currently-open overlay
-      // elsewhere can dismiss.
+      // Both open triggers and open content carry `data-state="open"`, but so
+      // do non-overlay primitives like Collapsible/Accordion/Tabs, which stay
+      // "open" for as long as a row is expanded. Matching on `data-state`
+      // alone would suppress the bridge for every click inside an expanded
+      // row, permanently preventing any Select/Popover/DropdownMenu in that
+      // row from ever seeing an outside click. Overlay triggers carry
+      // `aria-haspopup`, and popper-positioned overlay content carries
+      // `data-side` — neither appears on Collapsible/Accordion/Tabs, so
+      // require one of those alongside `data-state="open"` to identify a
+      // genuine open overlay.
       const isInsideOpenRadixOverlay = pe
         .composedPath()
-        .some(el => el instanceof Element && el.getAttribute('data-state') === 'open');
+        .some(
+          el =>
+            el instanceof Element &&
+            el.getAttribute('data-state') === 'open' &&
+            (el.hasAttribute('aria-haspopup') || el.hasAttribute('data-side')),
+        );
       if (isInsideOpenRadixOverlay) return;
 
       const synth = new PointerEvent(pe.type, { ...pe, bubbles: true, composed: true });
