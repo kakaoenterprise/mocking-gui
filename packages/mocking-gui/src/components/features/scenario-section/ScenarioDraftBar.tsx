@@ -14,8 +14,8 @@ interface ScenarioDraftBarProps {
 }
 
 /**
- * 시나리오 이름 입력 및 저장을 담당하는 하단 고정 바 컴포넌트입니다.
- * 이제 필요 시 드래프트 목록을 상단으로 펼쳐서 볼 수 있는 기능을 포함합니다.
+ * Fixed bottom bar component for entering and saving a scenario name.
+ * Supports expanding the draft list upward when needed.
  */
 const ScenarioDraftBar = ({ onTabChange, className }: ScenarioDraftBarProps) => {
   const { draftScenario, addScenario, clearDraft, handlers, removeFromDraft } = useHandlerStore();

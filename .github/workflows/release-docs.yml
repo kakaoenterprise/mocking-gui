@@ -1,11 +1,6 @@
 name: deploy-mocking-gui-docs
 
 on:
-  push:
-    branches: ['main']
-    paths:
-      - 'docs/**'
-      - '.github/workflows/release-docs.yml'
   workflow_dispatch:
 
 permissions:
