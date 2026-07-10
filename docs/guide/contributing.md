@@ -31,17 +31,10 @@ nvm use 22
 pnpm install
 ```
 
-3. **Build Packages**
+3. **Start Development Environment**
 
 ```bash
-pnpm mocking-gui:build
-```
-
-4. **Start Development Environment**
-
-```bash
-# Start all example environments
-pnpm mocking-gui:build
+# Start all example environments; the library rebuilds automatically on source changes
 pnpm example:dev
 ```
 
@@ -49,8 +42,8 @@ To test a specific example environment:
 
 ```bash
 # Test specific example
-pnpm --filter next-app-router dev  # Next.js SSR/RSC example
-pnpm --filter react-csr dev      # React (CSR) example
+pnpm turbo watch dev --filter=next-app-router  # Next.js SSR/RSC example
+pnpm turbo watch dev --filter=react-csr        # React (CSR) example
 ```
 
 ### Project Structure

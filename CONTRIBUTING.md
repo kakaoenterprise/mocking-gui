@@ -67,11 +67,14 @@ pnpm install
 To develop the `mocking-gui` library with real-time feedback using an example app:
 
 ```bash
-pnpm mocking-gui:build
 pnpm example:dev
 ```
 
-This runs the `mocking-gui` build in watch mode and the Next.js example application in parallel.
+This runs every example app in parallel under `turbo watch`. The `dev` task depends on `^build`, so editing library source re-runs the `mocking-gui` build and the running examples pick up the fresh `dist/` automatically. To work against a single example instead:
+
+```bash
+pnpm turbo watch dev --filter=react-csr
+```
 
 If you want to run everything (including documentation and all examples):
 

@@ -40,3 +40,6 @@ nodemon.json
 .yalc
 yalc.lock
 yalc-packages
+
+# vite config bundling temp files (retriggers turbo watch if not ignored)
+*.timestamp-*.mjs
