@@ -70,6 +70,24 @@ const ShadowRootPortal = (props: PropsWithChildren<{ styleText?: string }>) => {
     };
     root.addEventListener('pointerdown', bridgePointerDown, { capture: true });
 
+    // Host-page focus traps (MUI Modal's FocusTrap, Radix FocusScope, etc.) listen
+    // for `focusin` on the outer `document` and check
+    // `trapRootElement.contains(document.activeElement)` to detect whether focus
+    // escaped the trap. Per spec, when focus moves into this *open* shadow tree,
+    // `document.activeElement` (viewed from outside the shadow tree) resolves to
+    // the shadow host itself, not the real focused descendant. Since the host is
+    // a sibling of the trap's DOM subtree, `contains()` returns false, so any open
+    // host modal immediately yanks focus back to itself — breaking input/typing
+    // in this panel whenever a modal is open.
+    // Stop `focusin` from bubbling past the host so the host's trap never
+    // observes it. Target-phase listeners inside the shadow tree (React's own
+    // synthetic focus handling on the actual input) already ran before bubbling
+    // reaches here, so nothing inside the panel is affected.
+    const stopFocusInBubble = (e: FocusEvent) => {
+      e.stopPropagation();
+    };
+    host.addEventListener('focusin', stopFocusInBubble);
+
     const syncDarkMode = () => {
       const isDark = document.documentElement.classList.contains('dark');
       mount.classList.toggle('dark', isDark);
@@ -84,6 +102,7 @@ const ShadowRootPortal = (props: PropsWithChildren<{ styleText?: string }>) => {
     return () => {
       observer.disconnect();
       root.removeEventListener('pointerdown', bridgePointerDown, { capture: true });
+      host.removeEventListener('focusin', stopFocusInBubble);
     };
   }, []);
 
