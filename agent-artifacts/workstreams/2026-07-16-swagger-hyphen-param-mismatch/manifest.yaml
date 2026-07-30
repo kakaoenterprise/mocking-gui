@@ -1,0 +1,35 @@
+version: 1.0.0
+
+# ── Run Metadata ────────────────────────────────────────
+run_id: 2026-07-16-swagger-hyphen-param-mismatch
+workflow: harness-dev-pipeline
+size: small
+feature_name: Swagger kebab-case path param normalization fix
+description: >
+  Swagger-imported handlers whose OpenAPI path templates use kebab-case
+  parameter names (e.g. "{kubeflow-id}") are silently unmatched by MSW at
+  request time, even when active with a selected variant, because
+  path-to-regexp does not allow hyphens inside a named parameter token.
+created_at: 2026-07-16T00:00:00+09:00
+created_by: ria.ang@kakaoenterprise.com
+
+# ── Status Pointer (state machine) ───────────────────────
+current_phase: 4
+status: release_briefed_pending_commit
+
+# ── Assigned Agents ───────────────────────────────────────
+agent_assigned:
+  phase_1: system-architect
+  phase_2: frontend-engineer
+  phase_3: testing-specialist
+  phase_4: release-manager
+
+# ── Decision Pointers (ADR bodies live in agent-artifacts/decisions/) ─
+decisions:
+  - ADR-0005-normalize-kebab-case-path-params
+
+# ── Risks ──────────────────────────────────────
+risks:
+  - name: 'underscore rewrite of param names could theoretically collide with an existing snake_case param in the same path template'
+    severity: low
+    mitigation: 'Collision would already require an ambiguous/duplicate OpenAPI spec; document as a known edge case, not handled defensively'
