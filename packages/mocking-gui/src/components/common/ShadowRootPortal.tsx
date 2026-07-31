@@ -34,26 +34,14 @@ const ShadowRootPortal = (props: PropsWithChildren<{ styleText?: string }>) => {
     // composed event so document-level listeners receive the real composedPath.
     const bridgePointerDown = (e: Event) => {
       const pe = e as PointerEvent;
-      // When clicking inside an *already-open* Radix overlay (a trigger such as
-      // Select/Popover/DropdownMenu, or its portaled content such as
-      // SelectContent/DropdownMenuContent), skip re-dispatch. Otherwise the
-      // re-dispatched event reaches DismissableLayer as a second, "outside"
-      // pointerdown (its target is the shadow host, not inside the overlay),
-      // closing the overlay before the click can commit a selection.
-      // "Open overlay" must be detected without matching `data-state="open"`
-      // alone: non-overlay primitives like Collapsible/Accordion/Tabs also
-      // carry it while a row is expanded, which would suppress the bridge for
-      // every click inside an expanded row. Instead, match the two shapes an
-      // open Radix overlay can take:
-      //  - an expanded overlay trigger: `aria-expanded="true"` combined with
-      //    `aria-haspopup` (Popover/DropdownMenu/Menubar) or
-      //    `role="combobox"` (Select — its trigger has NO `aria-haspopup`,
-      //    so matching on `aria-haspopup` alone misses it and the bridge's
-      //    synthetic event closes-then-reopens the Select in one click).
-      //    Accordion/Collapsible triggers are also `aria-expanded="true"`
-      //    but have neither `aria-haspopup` nor `role="combobox"`.
-      //  - popper-positioned overlay content: `data-state="open"` with
-      //    `data-side` (SelectContent/PopoverContent/DropdownMenuContent).
+      // Skip re-dispatch for clicks inside an already-open Radix overlay (trigger or
+      // portaled content) — otherwise it reaches DismissableLayer as a second, "outside"
+      // pointerdown and closes the overlay before the click commits. Match only the two
+      // shapes an open overlay takes (not `data-state="open"` alone, which Collapsible/
+      // Accordion/Tabs also carry while expanded): an expanded trigger
+      // (`aria-expanded="true"` with `aria-haspopup` or `role="combobox"`, the latter for
+      // Select, whose trigger has no `aria-haspopup`), or popper-positioned content
+      // (`data-state="open"` with `data-side`).
       const isInsideOpenRadixOverlay = pe.composedPath().some(node => {
         if (!(node instanceof Element)) return false;
         const isOpenOverlayTrigger =
