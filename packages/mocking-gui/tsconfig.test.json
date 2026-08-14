@@ -1,0 +1,14 @@
+{
+  // Typechecks the test files that tsconfig.json deliberately excludes (they must
+  // not be emitted into dist). Scoped to src/api because that is where
+  // `@ts-expect-error` is used as an assertion: if a compile-time guarantee
+  // regresses, the directive becomes unused and this config fails.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "target": "ES2022",
+    "types": ["vitest/globals", "node"]
+  },
+  "include": ["src/api/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
