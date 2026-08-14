@@ -148,7 +148,7 @@ const toConfigs = (selections: readonly Selection[]): Scenario['configs'] => {
  * go through {@link extendScenario}, which makes the intent syntactically
  * visible.
  */
-export function scenario<const S extends readonly Selection[]>(
+export function defineScenario<const S extends readonly Selection[]>(
   name: string,
   selections: S & Unique<S>,
   opts?: ScenarioOptions,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { defineHandler, defineHandlers } from '../../define';
-import { scenario } from '../../scenario';
+import { defineScenario } from '../../scenario';
 
 import type { HandlerConfigOption } from '../../../types/config';
 
@@ -38,7 +38,7 @@ const createUser = defineHandler({
 describe('handler identity is the [method, url] ref', () => {
   it('rejects the same handler picked twice', () => {
     expect(() =>
-      scenario('duplicate', [
+      defineScenario('duplicate', [
         listUsers.pick('Success'),
         // @ts-expect-error - same ref, so this is a duplicate
         listUsers.pick('Error'),
@@ -49,13 +49,13 @@ describe('handler identity is the [method, url] ref', () => {
   it('quotes the display name, not the ref, in the runtime error', () => {
     const selections = [listUsers.pick('Success'), listUsers.pick('Error')];
 
-    expect(() => scenario('duplicate', selections)).toThrowError(
+    expect(() => defineScenario('duplicate', selections)).toThrowError(
       /handler "Users" is picked twice in scenario "duplicate"/,
     );
   });
 
   it('treats the same url under a different method as a distinct handler', () => {
-    const result = scenario('same url', [listUsers.pick('Success'), createUser.pick('Success')]);
+    const result = defineScenario('same url', [listUsers.pick('Success'), createUser.pick('Success')]);
 
     expect(Object.keys(result.configs)).toEqual(['get./users', 'post./users']);
   });
@@ -69,7 +69,7 @@ describe('handler identity is the [method, url] ref', () => {
       { name: 'List', url: '/subscriptions', method: 'get', responseVariants: [] },
     ] as const satisfies readonly HandlerConfigOption[]);
 
-    const result = scenario('both', [
+    const result = defineScenario('both', [
       topics.pick('List', 'anything'),
       subscriptions.pick('List', 'anything'),
     ]);
@@ -81,7 +81,7 @@ describe('handler identity is the [method, url] ref', () => {
     const registry = defineHandlers([listUsers] as const);
 
     expect(() =>
-      scenario('cross entry', [
+      defineScenario('cross entry', [
         registry.pick('Users', 'Success'),
         // @ts-expect-error - registry and handler paths resolve to the same ref
         listUsers.pick('Error'),
@@ -98,7 +98,7 @@ describe('handler identity is the [method, url] ref', () => {
     ];
     const registry = defineHandlers(legacy);
 
-    const result = scenario('widened', [
+    const result = defineScenario('widened', [
       registry.pick('A', 'anything'),
       registry.pick('B', 'anything'),
     ]);
@@ -111,6 +111,6 @@ describe('handler identity is the [method, url] ref', () => {
     const registry = defineHandlers(legacy);
     const selections = [registry.pick('A', 'x'), registry.pick('A', 'y')];
 
-    expect(() => scenario('widened dup', selections)).toThrowError(/handler "A" is picked twice/);
+    expect(() => defineScenario('widened dup', selections)).toThrowError(/handler "A" is picked twice/);
   });
 });

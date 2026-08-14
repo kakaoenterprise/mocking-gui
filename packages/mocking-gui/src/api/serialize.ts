@@ -21,7 +21,7 @@ import type { Scenario } from '../types/handler';
  * 3. Consumers re-run their suite; nothing in their code needs editing, because
  *    the payload is rebuilt from their `Scenario` objects on every run.
  *
- * Point 3 is what makes a version handshake unnecessary: `scenario()` is
+ * Point 3 is what makes a version handshake unnecessary: `defineScenario()` is
  * deterministic (fixed `createdAt`, slug-derived `id`), so a harness never has
  * to persist a serialized payload as a fixture — it can always re-serialize.
  * Do not snapshot the envelope into a file; snapshot the `Scenario` instead.

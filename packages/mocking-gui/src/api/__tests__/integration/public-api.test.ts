@@ -20,8 +20,8 @@ import * as testingEntry from '../../../testing';
 const EXPECTED_RUNTIME_EXPORTS = [
   'applyScenario',
   'defineHandlers',
+  'defineScenario',
   'extendScenario',
-  'scenario',
   'serializeScenario',
 ] as const;
 
