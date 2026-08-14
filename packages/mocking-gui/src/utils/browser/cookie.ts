@@ -80,35 +80,49 @@ const truncateEntriesByPriority = (
   return { kept, droppedCount };
 };
 
+/**
+ * Pure encoder: compresses active handlerConfigs into the cookie value string.
+ * Includes HARD_CAP truncation-by-priority (drops Swagger entries first) so the
+ * result is guaranteed to fit within HARD_CAP bytes.
+ *
+ * Exported so client runtime code (syncStateToCookie) and Node/SSR-safe code
+ * (testing serializers) share a single source of truth and cannot drift.
+ */
+export const encodeHandlerConfigsToCookieValue = (
+  handlerConfigs: Record<string, StoredHandlerVariants>,
+): string => {
+  const activeEntries: CookieEntry[] = Object.entries(handlerConfigs)
+    .filter(([_, config]) => config.active)
+    .map(([key, config]) => {
+      const typeChar = config.type?.[0] || 'M'; // Manual, Auto, Swagger
+      return [key, typeChar, config.variant || ''];
+    });
+
+  const encoded = encodeURIComponent(JSON.stringify(activeEntries));
+
+  if (encoded.length <= HARD_CAP) {
+    return encoded;
+  }
+
+  // Size limit exceeded. Truncate by priority, then warn instead of throwing.
+  const { kept, droppedCount } = truncateEntriesByPriority(activeEntries);
+
+  console.warn(
+    `[MockingGUI] Mocking state too large (${encoded.length} bytes) to sync in full. ` +
+      `Dropped ${droppedCount} Swagger-type handler override(s) to fit within the ${HARD_CAP} ` +
+      'byte limit. Manual/Auto handler overrides were preserved. Some handler state may not ' +
+      'be reflected in SSR-rendered output.',
+  );
+
+  return encodeURIComponent(JSON.stringify(kept));
+};
+
 export const syncStateToCookie = (handlerConfigs: Record<string, StoredHandlerVariants>) => {
   if (typeof window === 'undefined') return;
 
   try {
-    const activeEntries: CookieEntry[] = Object.entries(handlerConfigs)
-      .filter(([_, config]) => config.active)
-      .map(([key, config]) => {
-        const typeChar = config.type?.[0] || 'M'; // Manual, Auto, Swagger
-        return [key, typeChar, config.variant || ''];
-      });
-
-    const encoded = encodeURIComponent(JSON.stringify(activeEntries));
-
-    if (encoded.length <= HARD_CAP) {
-      // Tiers 1-2: fits as-is, single cookie or chunked.
-      writeEncodedState(encoded);
-    } else {
-      // Tier 3: size limit exceeded. Truncate by priority, then warn instead of throwing.
-      const { kept, droppedCount } = truncateEntriesByPriority(activeEntries);
-
-      console.warn(
-        `[MockingGUI] Mocking state too large (${encoded.length} bytes) to sync in full. ` +
-          `Dropped ${droppedCount} Swagger-type handler override(s) to fit within the ${HARD_CAP} ` +
-          'byte limit. Manual/Auto handler overrides were preserved. Some handler state may not ' +
-          'be reflected in SSR-rendered output.',
-      );
-
-      writeEncodedState(encodeURIComponent(JSON.stringify(kept)));
-    }
+    const encoded = encodeHandlerConfigsToCookieValue(handlerConfigs);
+    writeEncodedState(encoded);
   } catch (error) {
     console.error('[MockingGUI] Failed to sync state to cookie:', error);
     // Rethrow in development, log gracefully in production

@@ -7,7 +7,7 @@ import type { HandlerResponseVariant, HandlerState } from '@mocking-gui-types/ha
  * @param handler
  * @description Specifies the handlerKey value for handlerConfig.
  */
-export const getHandlerKey = (handler: HandlerState) => {
+export const getHandlerKey = (handler: Pick<HandlerState, 'method' | 'url'>) => {
   return `${handler.method}.${handler.url}`;
 };
 

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { LOCAL_STORAGE_KEY } from '@constants/key';
+
+import { LOCAL_STORAGE_KEY, PERSIST_VERSION } from '@constants/key';
 import { SwaggerSourceConfigOption } from '@mocking-gui-types/config';
 import { syncStateToCookie } from '@utils/browser/cookie';
 import { getHandlerKey } from '@utils/common/keys';
@@ -238,6 +239,7 @@ export const useHandlerStore = create<HandlerStoreState & HandlerStoreAction>()(
     }),
     {
       name: LOCAL_STORAGE_KEY.MOCKING_GUI_HANDLERS,
+      version: PERSIST_VERSION,
       partialize: state => ({
         handlerConfigs: state.handlerConfigs,
         scenarios: state.scenarios || [],
