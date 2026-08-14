@@ -13,7 +13,7 @@ describe('syncStateToCookie', () => {
   beforeEach(() => {
     // Setup: Define window for test environment
     if (typeof window === 'undefined') {
-      globalThis.window = {} as any;
+      globalThis.window = {} as Window & typeof globalThis;
     }
 
     // Setup: Full document.cookie mock with getter/setter
@@ -159,7 +159,7 @@ describe('syncStateToCookie', () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'development';
 
-      const invalidConfig = null as any;
+      const invalidConfig = null as unknown as Record<string, StoredHandlerVariants>;
 
       expect(() => syncStateToCookie(invalidConfig)).toThrow();
 
@@ -171,7 +171,7 @@ describe('syncStateToCookie', () => {
       process.env.NODE_ENV = 'production';
 
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      const invalidConfig = null as any;
+      const invalidConfig = null as unknown as Record<string, StoredHandlerVariants>;
 
       // Should not throw in production
       expect(() => syncStateToCookie(invalidConfig)).not.toThrow();
