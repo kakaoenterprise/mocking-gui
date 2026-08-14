@@ -7,7 +7,7 @@ import { mergeHandlersWithSwagger } from '@utils/swagger/merge';
 
 import useSwaggerHandlerSetup from './useSwaggerHandlerSetup';
 
-import type { MockingConfig } from '@mocking-gui-types/config';
+import type { HandlerConfigOption, MockingConfig } from '@mocking-gui-types/config';
 import type { SetupWorker as Worker } from 'msw/browser';
 
 const useSetupMockingGUIWorker = (config: MockingConfig = {}) => {
@@ -24,7 +24,7 @@ const useSetupMockingGUIWorker = (config: MockingConfig = {}) => {
   const [error, setError] = useState<Error | null>(null);
 
   const memoizedMocks = useMemo(() => {
-    return mocks.map(mock => {
+    return (mocks as HandlerConfigOption[]).map(mock => {
       if (!mock.responseVariants) return mock;
 
       const variantsMap = new Map<string, (typeof mock.responseVariants)[number]>();
