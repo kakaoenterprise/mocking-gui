@@ -104,5 +104,14 @@ export const convertSwaggerToHandlers = (baseUrl: string, swagger: OpenAPI): Han
     });
   });
 
-  return handlers;
+  return handlers.sort(
+    (prev, next) => Number(hasDynamicSegment(prev.url)) - Number(hasDynamicSegment(next.url)),
+  );
 };
+
+/**
+ * True when the URL path contains a dynamic segment (":param").
+ * Splits on "/" so a scheme/port colon in the base URL (e.g. "https://" or ":8443") is never mistaken for a dynamic segment.
+ */
+const hasDynamicSegment = (url: string): boolean =>
+  url.split('/').some(segment => segment.startsWith(':'));
