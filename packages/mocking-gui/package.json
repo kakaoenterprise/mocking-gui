@@ -1,6 +1,6 @@
 {
   "name": "@kakaocloud/mocking-gui",
-  "version": "1.0.5",
+  "version": "1.0.6-alpha.1",
   "description": "GUI library for MSW-based API mocking with an interactive panel",
   "type": "module",
   "exports": {
