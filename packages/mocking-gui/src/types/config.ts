@@ -3,9 +3,51 @@ import { http, RequestHandler } from 'msw';
 import type { HandlerResponseVariant, HttpResolverInfo } from './handler';
 import type { StartOptions as WorkerStartOptions } from 'msw/browser';
 
+/**
+ * Recursively marks every array and property as `readonly`, leaving functions
+ * callable.
+ *
+ * The function branch comes first on purpose: without it a function type would
+ * fall into the object branch and be mapped into a plain property bag, losing
+ * its call signature (`responseVariantsFn` would stop being invokable).
+ */
+type ReadonlyDeep<T> = T extends (...args: never[]) => unknown
+  ? T
+  : T extends (infer U)[]
+    ? readonly ReadonlyDeep<U>[]
+    : T extends object
+      ? { readonly [K in keyof T]: ReadonlyDeep<T[K]> }
+      : T;
+
+/**
+ * Handler config as accepted from user code: {@link HandlerConfigOption} with
+ * every array and property relaxed to `readonly`.
+ *
+ * The relaxation is what lets consumers pin declarations with `as const` — which
+ * is in turn what lets the testing API infer handler and variant names as
+ * literals. `as const` produces readonly arrays and readonly tuples, and neither
+ * is assignable to a mutable array.
+ *
+ * Note the relaxation is only needed when a *variable* is passed. An inline
+ * `[...] as const satisfies readonly HandlerConfigOption[]` checks fine against
+ * the engine's own type, because `satisfies` on a fresh literal is a different
+ * check from assigning an already-readonly value.
+ *
+ * Expressed by applying {@link ReadonlyDeep} rather than by restating fields, so
+ * the two shapes cannot drift: a field added to the engine's type appears here
+ * automatically, with no second definition to keep in sync. Named rather than
+ * inlined so compiler errors and IDE hovers print a short name instead of the
+ * fully expanded mapped type.
+ *
+ * Handler configs are only ever read by the engine, never mutated, so accepting
+ * readonly input costs nothing. The two reads that need the engine's shape cast
+ * at their boundary (`useSetupMockingGUIWorker`, `createMockingServer`).
+ */
+export type ReadonlyHandlerConfig = ReadonlyDeep<HandlerConfigOption>;
+
 // Client configuration type for Mocking GUI
 export type MockingConfig = {
-  mocks?: HandlerConfigOption[];
+  mocks?: readonly ReadonlyHandlerConfig[];
   swagger?: SwaggerSourceConfigOption[];
   worker?: WorkerStartOptions;
   /**

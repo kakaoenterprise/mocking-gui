@@ -19,6 +19,11 @@
       "import": "./dist/server.js",
       "require": "./dist/server.cjs"
     },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "import": "./dist/testing.js",
+      "require": "./dist/testing.cjs"
+    },
     "./style.css": "./dist/mocking-gui.css"
   },
   "typesVersions": {
@@ -31,6 +36,9 @@
       ],
       "server": [
         "dist/server.d.ts"
+      ],
+      "testing": [
+        "dist/testing.d.ts"
       ]
     }
   },
@@ -45,13 +53,14 @@
   "scripts": {
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "lint": "tsc --noEmit && eslint .",
+    "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json && eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "msw:init": "npx msw init public/ --save",
-    "release": "release-it --ci"
+    "release": "release-it --ci",
+    "typecheck:tests": "tsc --noEmit -p tsconfig.test.json"
   },
   "keywords": [
     "msw",
@@ -92,9 +101,9 @@
     "zustand": "^4.4.7"
   },
   "devDependencies": {
-    "@release-it/bumper": "^7.0.5",
     "@mocking-gui/eslint-config": "workspace:*",
     "@mocking-gui/typescript-config": "workspace:*",
+    "@release-it/bumper": "^7.0.5",
     "@tailwindcss/vite": "4.1.11",
     "@types/node": "24.0.8",
     "@types/react": "^19.1.8",
@@ -108,13 +117,13 @@
     "prettier": "3.6.2",
     "release-it": "^19.0.3",
     "tailwindcss": "^4.1.11",
+    "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.2.2",
     "typescript-eslint": "^8.36.0",
     "vite": "^5.0.8",
     "vite-plugin-dts": "^3.7.2",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^1.0.4",
-    "tailwindcss-animate": "^1.0.7"
+    "vitest": "^1.0.4"
   },
   "engines": {
     "node": ">=22.0.0"
