@@ -1,0 +1,6 @@
+# Default owners for everything in the repo.
+* @kep-mei-yo @kep-ria-ang
+
+# Release & CI configuration requires maintainer review.
+/.github/ @kep-mei-yo @kep-ria-ang
+/packages/mocking-gui/.release-it.json @kep-mei-yo @kep-ria-ang

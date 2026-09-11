@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      increment:
+        description: Version increment ("auto" derives it from Conventional Commits)
+        type: choice
+        default: auto
+        options: [auto, patch, minor, major]
+      preRelease:
+        description: Pre-release channel ("none" for a stable release)
+        type: choice
+        default: none
+        options: [none, alpha, beta, rc]
+      dryRun:
+        description: Dry run (no commit, tag, publish)
+        type: boolean
+        default: false
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write # push version commit + tag, create GitHub Release
+  id-token: write # npm provenance
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0 # release-it needs tags to compute the changelog range
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: ./.github/actions/setup
+
+      - name: Configure git author
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Configure npm auth
+        run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Release
+        working-directory: packages/mocking-gui
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INCREMENT: ${{ inputs.increment }}
+          PRE_RELEASE: ${{ inputs.preRelease }}
+          DRY_RUN: ${{ inputs.dryRun }}
+        run: |
+          ARGS=()
+          if [ "$INCREMENT" != "auto" ]; then ARGS+=("$INCREMENT"); fi
+          if [ "$PRE_RELEASE" != "none" ]; then ARGS+=("--preRelease=$PRE_RELEASE"); fi
+          # Dry runs never publish, so skip npm ping/whoami to allow running without NPM_TOKEN.
+          if [ "$DRY_RUN" = "true" ]; then ARGS+=("--dry-run" "--npm.skipChecks"); fi
+          pnpm release-it --ci "${ARGS[@]}"
+
+  deploy-docs:
+    needs: release
+    if: inputs.dryRun == false && inputs.preRelease == 'none'
+    uses: ./.github/workflows/release-docs.yml
+    permissions:
+      contents: write

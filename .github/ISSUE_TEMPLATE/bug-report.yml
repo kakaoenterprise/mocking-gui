@@ -1,7 +1,7 @@
 name: 🐛 Bug Report
 description: Report bugs or issues found in the library
-title: "[BUG] "
-labels: ["type: bug"]
+title: '[BUG] '
+labels: ['bug']
 
 body:
   - type: markdown
@@ -12,7 +12,7 @@ body:
         Thank you for taking the time to report a bug!
         Please fill out the form below with as much detail as possible so the team can investigate and fix the issue quickly.
 
-        👉 **If you have a question or need help**, please use the appropriate **Question / Discussion issue template** instead of this one.
+        👉 **If you have a question or need help**, please use [GitHub Discussions](../../discussions) instead of opening an issue.
 
   - type: textarea
     id: current-behavior
@@ -60,7 +60,6 @@ body:
       placeholder: |
         Paste error logs here
 
-
   - type: input
     id: affected-version
     attributes:
@@ -71,7 +70,6 @@ body:
       placeholder: 1.5.0, 1.6.0
     validations:
       required: false
-      
 
   - type: dropdown
     id: affected-browsers

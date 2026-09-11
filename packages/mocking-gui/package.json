@@ -47,11 +47,12 @@
     "preview": "vite preview",
     "lint": "tsc --noEmit && eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "vitest",
+    "test": "vitest run",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage",
+    "test:coverage": "vitest run --coverage",
     "msw:init": "npx msw init public/ --save",
-    "release": "release-it --ci"
+    "release": "release-it --ci",
+    "test:watch": "vitest"
   },
   "keywords": [
     "msw",
@@ -92,14 +93,15 @@
     "zustand": "^4.4.7"
   },
   "devDependencies": {
-    "@release-it/bumper": "^7.0.5",
     "@mocking-gui/eslint-config": "workspace:*",
     "@mocking-gui/typescript-config": "workspace:*",
+    "@release-it/conventional-changelog": "^12.0.0",
     "@tailwindcss/vite": "4.1.11",
     "@types/node": "24.0.8",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.2.1",
+    "@vitest/coverage-v8": "^1.6.1",
     "@vitest/ui": "^1.0.4",
     "autoprefixer": "^10.4.16",
     "chokidar-cli": "^3.0.0",
@@ -108,13 +110,13 @@
     "prettier": "3.6.2",
     "release-it": "^19.0.3",
     "tailwindcss": "^4.1.11",
+    "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.2.2",
     "typescript-eslint": "^8.36.0",
     "vite": "^5.0.8",
     "vite-plugin-dts": "^3.7.2",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^1.0.4",
-    "tailwindcss-animate": "^1.0.7"
+    "vitest": "^1.0.4"
   },
   "engines": {
     "node": ">=22.0.0"

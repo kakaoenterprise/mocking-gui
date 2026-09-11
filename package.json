@@ -19,9 +19,15 @@
     "docs:dev": "pnpm --filter @mocking-gui/docs dev",
     "docs:build": "pnpm --filter @mocking-gui/docs build",
     "docs:preview": "pnpm --filter @mocking-gui/docs preview",
-    "docs:deploy": "pnpm --filter @mocking-gui/docs deploy"
+    "docs:deploy": "pnpm --filter @mocking-gui/docs deploy",
+    "test": "turbo run test",
+    "test:coverage": "turbo run test:coverage",
+    "prepare": "husky",
+    "release": "pnpm --filter @kakaocloud/mocking-gui release"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
     "@eslint/js": "^9.30.1",
     "@types/node": "24.0.12",
     "eslint": "^9.30.1",
@@ -31,6 +37,8 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
     "eslint-plugin-unused-imports": "^4.1.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1",
     "turbo": "2.5.4"
   },
   "engines": {
