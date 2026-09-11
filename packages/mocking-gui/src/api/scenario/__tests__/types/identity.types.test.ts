@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { defineHandler, defineHandlers } from '../../define';
 import { defineScenario } from '../../scenario';
 
-import type { HandlerConfigOption } from '../../../types/config';
+import type { HandlerConfigOption } from '../../../../types/config';
 
 /**
  * The single home for duplicate-detection semantics.

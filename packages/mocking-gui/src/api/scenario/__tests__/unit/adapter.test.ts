@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { applyScenario } from '../../adapter';
 import { serializeScenarioCookie, serializeScenario } from '../../serialize';
 
-import type { Scenario } from '../../../types/handler';
+import type { Scenario } from '../../../../types/handler';
 import type { InitScriptCapable } from '../../adapter';
 
 const ORIGIN = 'https://example.com';

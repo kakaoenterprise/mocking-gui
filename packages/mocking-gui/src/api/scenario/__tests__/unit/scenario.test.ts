@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { HandlerType } from '../../../types/handler';
-import { isValidScenario } from '../../../utils/scenario';
+import { HandlerType } from '../../../../types/handler';
+import { isValidScenario } from '../../../../utils/scenario';
 import { defineHandler, defineHandlers } from '../../define';
 import { defineScenario, extendScenario } from '../../scenario';
 

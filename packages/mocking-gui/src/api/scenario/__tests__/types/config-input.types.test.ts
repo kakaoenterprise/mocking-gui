@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { defineHandlers } from '../../define';
 
-import type { ReadonlyHandlerConfig, HandlerConfigOption } from '../../../types/config';
+import type { ReadonlyHandlerConfig, HandlerConfigOption } from '../../../../types/config';
 
 /**
  * `ReadonlyHandlerConfig` is derived from `HandlerConfigOption` rather than

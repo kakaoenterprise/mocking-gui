@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { defineHandlers } from '../../define';
 
-import type { HandlerConfigOption } from '../../../types/config';
+import type { HandlerConfigOption } from '../../../../types/config';
 import type { HandlerNameOf } from '../../define';
 
 /**

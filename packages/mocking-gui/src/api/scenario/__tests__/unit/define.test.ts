@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { defineHandler, defineHandlers } from '../../define';
 
-import type { HandlerConfigOption, ReadonlyHandlerConfig } from '../../../types/config';
+import type { HandlerConfigOption, ReadonlyHandlerConfig } from '../../../../types/config';
 
 const usersHandler = defineHandler({
   name: 'Users',

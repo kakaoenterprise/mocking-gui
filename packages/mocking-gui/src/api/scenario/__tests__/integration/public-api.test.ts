@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import * as testingEntry from '../../../testing';
+import * as testingEntry from '../../../../testing';
 
 /**
  * Guards the shape of the `@kakaocloud/mocking-gui/testing` entry point.

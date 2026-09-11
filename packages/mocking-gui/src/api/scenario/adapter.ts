@@ -1,6 +1,6 @@
 import { serializeScenarioCookie, serializeScenario } from './serialize';
 
-import type { Scenario } from '../types/handler';
+import type { Scenario } from '../../types/handler';
 
 /**
  * Structural subset of the Playwright `BrowserContext` API needed to inject a

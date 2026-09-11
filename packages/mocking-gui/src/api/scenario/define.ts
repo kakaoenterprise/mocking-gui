@@ -1,6 +1,6 @@
-import { getHandlerKey } from '../utils/common/keys';
+import { getHandlerKey } from '../../utils/common/keys';
 
-import type { HandlerConfigOption, ReadonlyHandlerConfig } from '../types/config';
+import type { HandlerConfigOption, ReadonlyHandlerConfig } from '../../types/config';
 
 /**
  * Variant names of a handler as a literal union — or `string` when the

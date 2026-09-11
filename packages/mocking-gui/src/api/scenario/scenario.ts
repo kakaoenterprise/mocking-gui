@@ -1,9 +1,9 @@
-import { HandlerType } from '../types/handler';
+import { HandlerType } from '../../types/handler';
 
-import { getHandlerKey } from '../utils/common/keys';
+import { getHandlerKey } from '../../utils/common/keys';
 
 import type { HandlerRef, Selection } from './define';
-import type { Scenario } from '../types/handler';
+import type { Scenario } from '../../types/handler';
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Duplicate detection

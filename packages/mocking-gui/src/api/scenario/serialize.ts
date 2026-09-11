@@ -1,7 +1,7 @@
-import { LOCAL_STORAGE_KEY, PERSIST_VERSION } from '../constants/key';
-import { COOKIE_KEY, encodeHandlerConfigsToCookieValue } from '../utils/browser/cookie';
+import { LOCAL_STORAGE_KEY, PERSIST_VERSION } from '../../constants/key';
+import { COOKIE_KEY, encodeHandlerConfigsToCookieValue } from '../../utils/browser/cookie';
 
-import type { Scenario } from '../types/handler';
+import type { Scenario } from '../../types/handler';
 
 /**
  * The serialized payload shape is owned entirely by this library.
