@@ -2,24 +2,29 @@ import { serializeScenarioCookie, serializeScenario } from './serialize';
 
 import type { Scenario } from '../../types/handler';
 
-/**
- * Structural subset of the Playwright `BrowserContext` API needed to inject a
- * serialized scenario before app boot. Kept minimal and dependency-free so
- * this module never imports Playwright (or any runner package) directly — any
- * runner exposing these two methods works.
- *
- * Both methods are typed as returning `Promise<unknown>` rather than
- * `Promise<void>`: Playwright's `addInitScript` resolves to a `Disposable`
- * (1.49+), and a `Promise<void>` return type would reject a real
- * `BrowserContext` outright. Only the awaited side effect matters here.
- */
-export interface InitScriptCapable {
-  addInitScript(
-    script: (arg: { key: string; value: string; origin: string }) => void,
-    arg: { key: string; value: string; origin: string },
-  ): Promise<unknown>;
-  addCookies(cookies: { name: string; value: string; url: string }[]): Promise<unknown>;
+type InitScriptArg = { key: string; value: string; origin: string };
+type CookieRecord = { name: string; value: string; url: string };
+
+interface InitScriptHost {
+  addInitScript(script: (arg: InitScriptArg) => void, arg: InitScriptArg): Promise<unknown>;
 }
+
+/**
+ * Structural subset of a browser-automation driver needed to inject a
+ * serialized scenario before app boot. Dependency-free on purpose — any driver
+ * exposing these methods works:
+ *
+ * - Playwright `BrowserContext`: `addInitScript` + `addCookies`
+ * - WebdriverIO v9 `browser`: `addInitScript` + `setCookies`
+ *
+ * Methods return `Promise<unknown>` rather than `Promise<void>` because
+ * Playwright's `addInitScript` resolves to a `Disposable` (1.49+).
+ */
+export type InitScriptCapable = InitScriptHost &
+  ({ addCookies(cookies: CookieRecord[]): Promise<unknown> } | { setCookies(cookies: CookieRecord[]): Promise<unknown> });
+
+const writeCookies = (context: InitScriptCapable, cookies: CookieRecord[]): Promise<unknown> =>
+  'addCookies' in context ? context.addCookies(cookies) : context.setCookies(cookies);
 
 export interface ApplyScenarioOptions {
   /**
@@ -54,7 +59,7 @@ export const applyScenario = async (
   // runner. It must be fully self-contained and must NOT close over any
   // variable from this scope.
   await context.addInitScript(
-    (arg: { key: string; value: string; origin: string }) => {
+    (arg: InitScriptArg) => {
       if (window.location.origin !== arg.origin) return;
       window.localStorage.setItem(arg.key, arg.value);
     },
@@ -62,6 +67,6 @@ export const applyScenario = async (
   );
 
   if (options.ssr) {
-    await context.addCookies([{ ...serializeScenarioCookie(scenario), url: options.origin }]);
+    await writeCookies(context, [{ ...serializeScenarioCookie(scenario), url: options.origin }]);
   }
 };
