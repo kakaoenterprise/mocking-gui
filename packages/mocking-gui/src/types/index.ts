@@ -1,1 +1,1 @@
-export type { HandlerConfigOption, MockingConfig, SwaggerSourceConfigOption } from './config';
+export type { HandlerConfigOption, MockingConfig, ReadonlyHandlerConfig, SwaggerSourceConfigOption } from './config';
