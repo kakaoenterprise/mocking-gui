@@ -9,7 +9,7 @@ export type {
   Selection,
   VariantName,
 } from './define';
-export { defineHandlers } from './define';
+export { defineRegistry } from './define';
 export type { ScenarioOptions } from './scenario';
 export { defineScenario, extendScenario } from './scenario';
 export type { ScenarioStateEntry } from './serialize';

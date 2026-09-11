@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { HandlerType } from '../../../../types/handler';
 import { isValidScenario } from '../../../../utils/scenario';
-import { defineHandler, defineHandlers } from '../../define';
+import { defineHandler, defineRegistry } from '../../define';
 import { defineScenario, extendScenario } from '../../scenario';
 
 import type { Selection } from '../../define';
@@ -53,7 +53,7 @@ describe('defineScenario', () => {
   });
 
   it('accepts selections from both entry paths in one scenario', () => {
-    const registry = defineHandlers([usersHandler, notebooksHandler]);
+    const registry = defineRegistry([usersHandler, notebooksHandler]);
     const result = defineScenario('Mixed', [
       registry.pick('Users', 'Admin'),
       notebooksHandler.pick('Empty'),
@@ -238,7 +238,7 @@ describe('extendScenario chaining', () => {
 
 describe('duplicate picks', () => {
   it('rejects a duplicate reached through two different entry paths', () => {
-    const registry = defineHandlers([usersHandler]);
+    const registry = defineRegistry([usersHandler]);
 
     expect(() =>
       defineScenario('cross entry', [
@@ -260,10 +260,10 @@ describe('duplicate picks', () => {
   });
 
   it('allows the same display name when the refs differ', () => {
-    const topics = defineHandlers([
+    const topics = defineRegistry([
       { name: 'List', url: '/topics', method: 'get', responseVariants: [] },
     ] as const);
-    const subs = defineHandlers([
+    const subs = defineRegistry([
       { name: 'List', url: '/subs', method: 'get', responseVariants: [] },
     ] as const);
 

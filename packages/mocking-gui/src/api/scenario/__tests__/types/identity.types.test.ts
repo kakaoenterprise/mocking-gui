@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { defineHandler, defineHandlers } from '../../define';
+import { defineHandler, defineRegistry } from '../../define';
 import { defineScenario } from '../../scenario';
 
 import type { HandlerConfigOption } from '../../../../types/config';
@@ -62,10 +62,10 @@ describe('handler identity is the [method, url] ref', () => {
 
   it('accepts distinct handlers that share a display name', () => {
     // Two domains naming their list endpoint the same thing is legitimate.
-    const topics = defineHandlers([
+    const topics = defineRegistry([
       { name: 'List', url: '/topics', method: 'get', responseVariants: [] },
     ] as const satisfies readonly HandlerConfigOption[]);
-    const subscriptions = defineHandlers([
+    const subscriptions = defineRegistry([
       { name: 'List', url: '/subscriptions', method: 'get', responseVariants: [] },
     ] as const satisfies readonly HandlerConfigOption[]);
 
@@ -78,7 +78,7 @@ describe('handler identity is the [method, url] ref', () => {
   });
 
   it('catches the same handler reached through different entry paths', () => {
-    const registry = defineHandlers([listUsers] as const);
+    const registry = defineRegistry([listUsers] as const);
 
     expect(() =>
       defineScenario('cross entry', [
@@ -96,7 +96,7 @@ describe('handler identity is the [method, url] ref', () => {
       { name: 'A', url: '/a', method: 'get' },
       { name: 'B', url: '/b', method: 'get' },
     ];
-    const registry = defineHandlers(legacy);
+    const registry = defineRegistry(legacy);
 
     const result = defineScenario('widened', [
       registry.pick('A', 'anything'),
@@ -108,7 +108,7 @@ describe('handler identity is the [method, url] ref', () => {
 
   it('still catches a genuine duplicate in a widened collection', () => {
     const legacy: HandlerConfigOption[] = [{ name: 'A', url: '/a', method: 'get' }];
-    const registry = defineHandlers(legacy);
+    const registry = defineRegistry(legacy);
     const selections = [registry.pick('A', 'x'), registry.pick('A', 'y')];
 
     expect(() => defineScenario('widened dup', selections)).toThrowError(/handler "A" is picked twice/);

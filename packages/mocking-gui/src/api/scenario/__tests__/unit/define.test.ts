@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { defineHandler, defineHandlers } from '../../define';
+import { defineHandler, defineRegistry } from '../../define';
 
-import type { HandlerConfigOption, ReadonlyHandlerConfig } from '../../../../types/config';
+import type {
+  HandlerConfigOption,
+  MockingConfig,
+  ReadonlyHandlerConfig,
+} from '../../../../types/config';
 
 const usersHandler = defineHandler({
   name: 'Users',
@@ -71,8 +75,8 @@ describe('defineHandler', () => {
   });
 });
 
-describe('defineHandlers', () => {
-  const registry = defineHandlers([usersHandler, notebooksHandler]);
+describe('defineRegistry', () => {
+  const registry = defineRegistry([usersHandler, notebooksHandler]);
 
   it('picks by handler name, never by the internal storage key', () => {
     expect(registry.pick('Users', 'Admin')).toEqual({
@@ -129,7 +133,7 @@ describe('defineHandlers', () => {
 
   it('rejects two handlers sharing a name', () => {
     expect(() =>
-      defineHandlers([
+      defineRegistry([
         { name: 'Dup', url: '/a', method: 'get' },
         { name: 'Dup', url: '/b', method: 'get' },
       ]),
@@ -138,11 +142,23 @@ describe('defineHandlers', () => {
 
   it('rejects two handlers resolving to the same method + url', () => {
     expect(() =>
-      defineHandlers([
+      defineRegistry([
         { name: 'First', url: '/same', method: 'get' },
         { name: 'Second', url: '/same', method: 'get' },
       ]),
     ).toThrowError(/"First" and "Second" both resolve to "get.\/same"/);
+  });
+
+  it('exposes the original handler collection as `handlers` for runtime reuse', () => {
+    const handlers = [
+      { name: 'Users', url: '/api/users', method: 'get', responseVariants: [{ name: 'Success', status: 200 }] },
+    ] as const;
+    const registry = defineRegistry(handlers);
+
+    expect(registry.handlers).toBe(handlers);
+    // Type-level: assignable to MockingConfig['mocks']
+    const mocks: MockingConfig['mocks'] = registry.handlers;
+    expect(mocks).toHaveLength(1);
   });
 });
 
@@ -151,7 +167,7 @@ describe('tier degradation', () => {
     const legacy: HandlerConfigOption[] = [
       { name: 'Quota', url: '/api/quota', method: 'get', responseVariants: [] },
     ];
-    const registry = defineHandlers(legacy);
+    const registry = defineRegistry(legacy);
 
     expect(registry.pick('Quota', 'anything-goes').ref).toEqual(['get', '/api/quota']);
   });
@@ -160,7 +176,7 @@ describe('tier degradation', () => {
     const legacy: HandlerConfigOption[] = [
       { name: 'Quota', url: '/api/quota', method: 'get', responseVariants: [] },
     ];
-    const registry = defineHandlers(legacy);
+    const registry = defineRegistry(legacy);
 
     expect(registry.keyOf('Quota')).toBe('get./api/quota');
     expect(registry.names).toEqual(['Quota']);

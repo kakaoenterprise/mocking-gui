@@ -166,6 +166,13 @@ export type HandlerByName<
 
 export interface HandlerRegistry<T extends readonly ReadonlyHandlerConfig[]> {
   /**
+   * The handler collection this registry was built from, unchanged.
+   *
+   * Lets a registry be the single declaration for both runtime mocking and
+   * scenario authoring: pass `registry.handlers` to `MockingConfig.mocks`.
+   */
+  readonly handlers: T;
+  /**
    * Picks a variant by handler name. Choosing the name narrows the accepted
    * variant names to that handler's own.
    */
@@ -223,14 +230,14 @@ type NoUnknownKeys<T extends readonly unknown[]> = {
 };
 
 /**
- * Wraps an existing handler collection so its members can be picked by name,
+ * Wraps an existing handler collection in a registry so its members can be picked by name,
  * without modifying the handler definitions themselves.
  *
  * Throws when two handlers share a name, or when two handlers resolve to the
  * same `method.url` key — the latter cannot be surfaced as a type error
  * because key remapping silently keeps the last entry.
  */
-export function defineHandlers<const T extends readonly ReadonlyHandlerConfig[]>(
+export function defineRegistry<const T extends readonly ReadonlyHandlerConfig[]>(
   handlers: T & NoUnknownKeys<T>,
 ): HandlerRegistry<T> {
   const byName = new Map<string, ReadonlyHandlerConfig>();
@@ -273,6 +280,7 @@ export function defineHandlers<const T extends readonly ReadonlyHandlerConfig[]>
   // re-derived from the runtime Map, so no implementation can satisfy the
   // generic signature structurally.
   const registry = {
+    handlers,
     names: handlers.map(handler => handler.name),
     pick: (name: string, variant: string, opts?: { delay?: number }): Selection => {
       const resolved = resolve(name);

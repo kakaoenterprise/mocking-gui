@@ -11,7 +11,7 @@ import * as testingEntry from '../../../../testing';
  * itself, so adding an export is a deliberate, visible change.
  *
  * Kept deliberately narrow: `defineHandler` stays internal because
- * `defineHandlers(...).get(name)` produces an identical `DefinedHandler` while
+ * `defineRegistry(...).get(name)` produces an identical `DefinedHandler` while
  * keeping the registry's duplicate-name and method+url checks; `serializeScenarioCookie` stays internal because
  * `applyScenario({ ssr: true })` is the only way it is needed, and
  * `isValidScenario` belongs with runtime scenario provisioning (config/props),
@@ -19,7 +19,7 @@ import * as testingEntry from '../../../../testing';
  */
 const EXPECTED_RUNTIME_EXPORTS = [
   'applyScenario',
-  'defineHandlers',
+  'defineRegistry',
   'defineScenario',
   'extendScenario',
   'serializeScenario',

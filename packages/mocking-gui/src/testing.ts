@@ -1,6 +1,6 @@
 export {
   applyScenario,
-  defineHandlers,
+  defineRegistry,
   defineScenario,
   extendScenario,
   serializeScenario,
