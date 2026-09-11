@@ -48,7 +48,7 @@ export default defineConfig(({ mode }: ConfigEnv) => {
           index: resolve(__dirname, 'src/index.ts'),
           browser: resolve(__dirname, 'src/browser.ts'),
           server: resolve(__dirname, 'src/server.ts'),
-          testing: resolve(__dirname, 'src/testing.ts'),
+          experimental: resolve(__dirname, 'src/experimental.ts'),
         },
         name: 'mocking-gui',
         formats: ['es', 'cjs'],
