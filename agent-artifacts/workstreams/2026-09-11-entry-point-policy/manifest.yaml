@@ -1,0 +1,29 @@
+version: 1.0.0
+
+run_id: 2026-09-11-entry-point-policy
+workflow: harness-dev-pipeline
+size: full
+feature_name: Entry point policy (experimental staging + scenario subpath)
+description: Define how alpha/beta features are exported and graduated, and fix the graduated home of the PR #18 scenario API
+created_at: 2026-09-11T00:00:00+09:00
+created_by: ria.ang@kakaoenterprise.com
+
+current_phase: 4
+status: completed
+
+agent_assigned:
+  phase_1: system-architect
+  phase_2: frontend-engineer
+  phase_3: testing-specialist
+  phase_4: release-manager
+
+decisions:
+  - ADR-0006-entry-point-policy
+
+risks:
+  - name: 'alpha.1 users import from ./testing'
+    severity: low
+    mitigation: 'Pre-release contract; path change announced in changelog for 1.0.6-alpha.2'
+  - name: 'Node smoke test may surface an msw/browser transitive import'
+    severity: medium
+    mitigation: 'types/handler.ts imports msw values only; verify with vitest node environment before build'

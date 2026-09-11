@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
 
-import { LOCAL_STORAGE_KEY, PERSIST_VERSION } from '../../../constants/key';
-import { HandlerType } from '../../../types/handler';
-import { COOKIE_KEY, encodeHandlerConfigsToCookieValue } from '../../../utils/browser/cookie';
-import { computeActiveScenarioId } from '../../../utils/scenario';
+import { LOCAL_STORAGE_KEY, PERSIST_VERSION } from '../../../../constants/key';
+import { HandlerType } from '../../../../types/handler';
+import { COOKIE_KEY, encodeHandlerConfigsToCookieValue } from '../../../../utils/browser/cookie';
+import { computeActiveScenarioId } from '../../../../utils/scenario';
 import { serializeScenario, serializeScenarioCookie } from '../../serialize';
 
-import type { HandlerState } from '../../../types/handler';
-import type { Scenario } from '../../../types/handler';
+import type { HandlerState } from '../../../../types/handler';
+import type { Scenario } from '../../../../types/handler';
 
 const makeScenario = (): Scenario => ({
   id: 'scn-1',

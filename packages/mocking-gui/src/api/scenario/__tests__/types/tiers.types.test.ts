@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { defineHandlers } from '../../define';
+import { defineRegistry } from '../../define';
 
-import type { HandlerConfigOption } from '../../../types/config';
+import type { HandlerConfigOption } from '../../../../types/config';
 import type { HandlerNameOf } from '../../define';
 
 /**
@@ -49,7 +49,7 @@ const widenedHandlers: HandlerConfigOption[] = [
 ];
 
 describe('HandlerNameOf — pinned collection', () => {
-  const registry = defineHandlers(typedHandlers);
+  const registry = defineRegistry(typedHandlers);
 
   it('accepts declared names and narrows variants to that handler', () => {
     expect(registry.pick('Users', 'Admin').variant).toBe('Admin');
@@ -76,7 +76,7 @@ describe('HandlerNameOf — pinned collection', () => {
 describe('HandlerNameOf — mixed collection', () => {
   // This is the shape that used to collapse: pinned handlers spread alongside
   // an annotated (widened) array.
-  const registry = defineHandlers([...typedHandlers, ...widenedHandlers]);
+  const registry = defineRegistry([...typedHandlers, ...widenedHandlers]);
 
   it('keeps checking the names that survived as literals', () => {
     expect(registry.pick('Users', 'Admin').variant).toBe('Admin');
@@ -100,7 +100,7 @@ describe('HandlerNameOf — mixed collection', () => {
 });
 
 describe('HandlerNameOf — fully widened collection', () => {
-  const registry = defineHandlers(widenedHandlers);
+  const registry = defineRegistry(widenedHandlers);
 
   it('falls back to string so an unmigrated codebase still works', () => {
     const name: HandlerNameOf<typeof widenedHandlers> = 'Quota';

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { defineHandlers } from '../../define';
+import { defineRegistry } from '../../define';
 
-import type { ReadonlyHandlerConfig, HandlerConfigOption } from '../../../types/config';
+import type { ReadonlyHandlerConfig, HandlerConfigOption } from '../../../../types/config';
 
 /**
  * `ReadonlyHandlerConfig` is derived from `HandlerConfigOption` rather than
@@ -26,7 +26,7 @@ describe('ReadonlyHandlerConfig (derived)', () => {
       },
     ] as const satisfies readonly ReadonlyHandlerConfig[];
 
-    const registry = defineHandlers(handlers);
+    const registry = defineRegistry(handlers);
     expect(registry.pick('Users', 'Empty').ref).toEqual(['get', '/users']);
     // @ts-expect-error - variant names stayed literal through the derived type
     expect(() => registry.pick('Users', 'Nope')).toThrow();
@@ -36,7 +36,7 @@ describe('ReadonlyHandlerConfig (derived)', () => {
     const legacy: HandlerConfigOption[] = [
       { name: 'Quota', url: '/quota', method: 'get', responseVariants: [] },
     ];
-    expect(defineHandlers(legacy).names).toEqual(['Quota']);
+    expect(defineRegistry(legacy).names).toEqual(['Quota']);
   });
 
   it('accepts every field the engine type declares', () => {

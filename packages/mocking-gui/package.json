@@ -19,10 +19,10 @@
       "import": "./dist/server.js",
       "require": "./dist/server.cjs"
     },
-    "./testing": {
-      "types": "./dist/testing.d.ts",
-      "import": "./dist/testing.js",
-      "require": "./dist/testing.cjs"
+    "./experimental": {
+      "types": "./dist/experimental.d.ts",
+      "import": "./dist/experimental.js",
+      "require": "./dist/experimental.cjs"
     },
     "./style.css": "./dist/mocking-gui.css"
   },
@@ -37,8 +37,8 @@
       "server": [
         "dist/server.d.ts"
       ],
-      "testing": [
-        "dist/testing.d.ts"
+      "experimental": [
+        "dist/experimental.d.ts"
       ]
     }
   },
