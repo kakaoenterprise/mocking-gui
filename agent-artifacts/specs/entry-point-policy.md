@@ -4,9 +4,8 @@ type: spec
 task: 'Entry point policy — experimental 실험실 경로와 scenario API 정식 경로 설계'
 date: 2026-09-11
 tier: full
-status: promoted
-promoted_to: specs/entry-point-policy.md
-run_id: 2026-09-11-entry-point-policy
+status: active
+origin_run: 2026-09-11-entry-point-policy
 related_pr: https://github.com/kakaoenterprise/mocking-gui/pull/18
 related_adr: ADR-0006
 ---
