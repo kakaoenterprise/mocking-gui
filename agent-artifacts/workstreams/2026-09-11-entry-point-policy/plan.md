@@ -424,9 +424,10 @@ import type {
 
 /**
  * The root entry is a type-only contract (ADR-0006). It must never export a
- * runtime value, and the set of exported types is pinned here.
+ * runtime value. The pinned type set is asserted by the type imports above:
+ * `tsconfig.test.json` typechecks this file, so a removed type fails lint.
  */
-type RootTypes = {
+export type RootTypes = {
   HandlerConfigOption: HandlerConfigOption;
   MockingConfig: MockingConfig;
   ReadonlyHandlerConfig: ReadonlyHandlerConfig;
@@ -437,12 +438,6 @@ type RootTypes = {
 describe('root entry surface', () => {
   it('exports no runtime values', () => {
     expect(Object.keys(root)).toEqual([]);
-  });
-
-  it('exports the pinned type set', () => {
-    // Compile-time assertion: each type resolves. Runtime body is intentionally trivial.
-    const probe: Partial<RootTypes> = {};
-    expect(probe).toEqual({});
   });
 
   it('accepts an as-const handler collection as MockingConfig.mocks', () => {
