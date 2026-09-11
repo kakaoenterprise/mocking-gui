@@ -46,19 +46,20 @@ jobs:
   test:
     name: Test & Coverage
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
       - name: Test with coverage
         run: pnpm --filter @kakaocloud/mocking-gui test:coverage
-      - name: Coverage report comment
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        uses: davelosert/vitest-coverage-report-action@v2
+      # Codecov (GitHub App) posts the PR comment and status checks, including for fork PRs.
+      # CODECOV_TOKEN is only available on push to main; fork PRs upload tokenless (public repo).
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
         with:
-          working-directory: packages/mocking-gui
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/mocking-gui/coverage/coverage-final.json
+          flags: mocking-gui
+          fail_ci_if_error: true
       - name: Upload coverage artifact
         if: always()
         uses: actions/upload-artifact@v4
