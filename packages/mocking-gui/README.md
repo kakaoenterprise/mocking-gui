@@ -46,8 +46,9 @@ export const mockingConfig: MockingConfig = {
     // ... your MSW handlers or handler state objects
   ],
 
-  // 2. onDemandHandlers: Native MSW RequestHandlers (NOT GUI Controlled)
+  // 2. onDemandHandlers: Native MSW RequestHandlers (Passed straight to MSW & NOT GUI Controlled)
   // Useful for GraphQL, WebSocket or handlers that you don't want to control via GUI.
+  // Put every http.* handler in `mocks` above, never here.
   onDemandHandlers: [...graphqlHandlers],
 
   // 3. Swagger: Configure Swagger sources for auto-generated mocks

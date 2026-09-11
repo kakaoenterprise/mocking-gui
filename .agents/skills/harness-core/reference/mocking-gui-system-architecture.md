@@ -84,6 +84,6 @@ The core adapter that converts Mocking GUI's high-level configuration (`HandlerS
 ## 5. Engineering Standards and Constraints
 
 1. **Strict Type System**: Use of `any` is prohibited; common interfaces under `types/` must always be extended when adding new handlers or features.
-2. **HTTP Only**: Currently only the MSW `http` namespace is supported; GraphQL/WebSocket, etc., are managed as future extension tasks.
+2. **HTTP Only (GUI-managed)**: Only the MSW `http` namespace is GUI-managed. GraphQL/WebSocket handlers go through `MockingConfig.onDemandHandlers`, which bypasses the handler store (not shown in the panel, browser-only). `http.*` handlers must never be placed there.
 3. **Integrity First**: State changes must only be made through the store, and immutability must be maintained.
 4. **Server-Side Sync**: If mocking state does not match on the server side, first inspect the cookie parsing logic in `packages/mocking-gui/src/utils/server/setup.ts`.
