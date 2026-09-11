@@ -13,3 +13,4 @@ description: 'Global ADR list — all ADRs exist only in this folder and follow 
 | [ADR-0003](ADR-0003-multi-cookie-split.md)               | Overcoming Cookie Size Limits with Multi-Cookie Split               | Accepted | 2026-07-01-ssr-state-sync                | 2026-07-01 |
 | [ADR-0004](ADR-0004-environment-aware-error-handling.md) | Environment-Aware Error Handling Strategy for State Synchronization | Accepted | 2026-07-01-ssr-state-sync                | 2026-07-01 |
 | [ADR-0005](ADR-0005-normalize-kebab-case-path-params.md) | Normalize kebab-case OpenAPI path params to underscore identifiers  | Proposed | 2026-07-16-swagger-hyphen-param-mismatch | 2026-07-23 |
+| [ADR-0006](ADR-0006-entry-point-policy.md)               | Subpath entry policy: type-only root, domain subpaths, experimental staging entry | Proposed | 2026-09-11-entry-point-policy            | 2026-09-11 |
