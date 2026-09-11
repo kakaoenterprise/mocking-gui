@@ -43,6 +43,7 @@ $ pnpm --filter @kakaocloud/mocking-gui exec vitest run
 ```
 
 Includes the new per-entry surface tests:
+
 - `src/__tests__/entries/experimental.surface.test.ts` (3 tests)
 - `src/__tests__/entries/browser.surface.test.ts` (1 test)
 - `src/__tests__/entries/server.surface.test.ts` (1 test)

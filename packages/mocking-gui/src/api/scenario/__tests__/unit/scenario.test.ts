@@ -120,7 +120,9 @@ describe('defineScenario', () => {
 });
 
 describe('extendScenario', () => {
-  const base = defineScenario('Base', [usersHandler.pick('Admin')], { description: 'shared premise' });
+  const base = defineScenario('Base', [usersHandler.pick('Admin')], {
+    description: 'shared premise',
+  });
 
   it('merges base configs with the overrides', () => {
     const extended = extendScenario(base, 'Base + empty notebooks', [

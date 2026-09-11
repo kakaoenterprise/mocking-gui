@@ -12,6 +12,14 @@ import * as experimental from '../../experimental';
  *
  * Adding, moving (graduating) or removing a symbol must change this list — that
  * is the point. See ADR-0006.
+ *
+ * Deliberately excluded, and why:
+ * - `defineHandler` (singular) stays internal because `defineRegistry(...).get(name)`
+ *   yields the same `DefinedHandler` while keeping the registry's duplicate-name
+ *   and method+url checks.
+ * - `serializeScenarioCookie` stays internal because `applyScenario({ ssr: true })`
+ *   is the only consumer and keeps the localStorage and cookie payloads in step.
+ * - `isValidScenario` belongs to runtime scenario provisioning, not this entry.
  */
 const EXPECTED_RUNTIME_EXPORTS = [
   'applyScenario',

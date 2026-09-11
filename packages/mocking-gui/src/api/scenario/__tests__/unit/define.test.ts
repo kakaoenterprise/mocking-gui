@@ -151,7 +151,12 @@ describe('defineRegistry', () => {
 
   it('exposes the original handler collection as `handlers` for runtime reuse', () => {
     const handlers = [
-      { name: 'Users', url: '/api/users', method: 'get', responseVariants: [{ name: 'Success', status: 200 }] },
+      {
+        name: 'Users',
+        url: '/api/users',
+        method: 'get',
+        responseVariants: [{ name: 'Success', status: 200 }],
+      },
     ] as const;
     const registry = defineRegistry(handlers);
 

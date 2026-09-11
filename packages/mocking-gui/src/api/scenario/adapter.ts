@@ -15,14 +15,23 @@ interface InitScriptHost {
  * exposing these methods works:
  *
  * - Playwright `BrowserContext`: `addInitScript` + `addCookies`
- * - WebdriverIO v9 `browser`: `addInitScript` + `setCookies`
+ * - WebdriverIO v9 `browser`: `addInitScript` + `setCookies` (localStorage seeding
+ *   verified; cookie seeding for `ssr: true` requires being navigated to
+ *   `origin` first)
  *
  * Methods return `Promise<unknown>` rather than `Promise<void>` because
  * Playwright's `addInitScript` resolves to a `Disposable` (1.49+).
  */
 export type InitScriptCapable = InitScriptHost &
-  ({ addCookies(cookies: CookieRecord[]): Promise<unknown> } | { setCookies(cookies: CookieRecord[]): Promise<unknown> });
+  (
+    | { addCookies(cookies: CookieRecord[]): Promise<unknown> }
+    | { setCookies(cookies: CookieRecord[]): Promise<unknown> }
+  );
 
+// `addCookies` takes precedence if a driver exposes both. The `setCookies`
+// branch passes the same `{ name, value, url }` record, but WebdriverIO's
+// `setCookies` ignores `url` and scopes the cookie to the current page, so
+// `ssr: true` with WebdriverIO requires the browser to already be on `origin`.
 const writeCookies = (context: InitScriptCapable, cookies: CookieRecord[]): Promise<unknown> =>
   'addCookies' in context ? context.addCookies(cookies) : context.setCookies(cookies);
 

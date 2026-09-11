@@ -102,6 +102,11 @@ function App() {
 | `@kakaocloud/mocking-gui/server`       | `setupMockingServer`                                                                                                                         |
 | `@kakaocloud/mocking-gui/experimental` | pre-release features, outside semver — see the [API guide](https://kakaoenterprise.github.io/mocking-gui/guide/usage/api-guide#entry-points) |
 
+#### Migrating from 1.0.6-alpha.1
+
+- `@kakaocloud/mocking-gui/testing` was removed; import from `@kakaocloud/mocking-gui/experimental`.
+- `defineHandlers` was renamed to `defineRegistry`.
+
 ## Development
 
 ```bash

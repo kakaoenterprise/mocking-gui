@@ -55,7 +55,10 @@ describe('handler identity is the [method, url] ref', () => {
   });
 
   it('treats the same url under a different method as a distinct handler', () => {
-    const result = defineScenario('same url', [listUsers.pick('Success'), createUser.pick('Success')]);
+    const result = defineScenario('same url', [
+      listUsers.pick('Success'),
+      createUser.pick('Success'),
+    ]);
 
     expect(Object.keys(result.configs)).toEqual(['get./users', 'post./users']);
   });
@@ -111,6 +114,8 @@ describe('handler identity is the [method, url] ref', () => {
     const registry = defineRegistry(legacy);
     const selections = [registry.pick('A', 'x'), registry.pick('A', 'y')];
 
-    expect(() => defineScenario('widened dup', selections)).toThrowError(/handler "A" is picked twice/);
+    expect(() => defineScenario('widened dup', selections)).toThrowError(
+      /handler "A" is picked twice/,
+    );
   });
 });

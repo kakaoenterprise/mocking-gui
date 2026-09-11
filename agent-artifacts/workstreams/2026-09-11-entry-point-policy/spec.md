@@ -25,11 +25,11 @@ PR #18(`1.0.6-alpha.1`)로 배포된 시나리오 저작·주입 API를 대상�
 
 ### 2.1 현재 export 구조 (1.0.6-alpha.1)
 
-| 엔트리 | 내용 | 성격 |
-| --- | --- | --- |
-| `.` | `HandlerConfigOption`, `MockingConfig`, `SwaggerSourceConfigOption` (type only) | 공유 타입 계약 |
-| `./browser` | `MockingGUIBoundary` | 브라우저 런타임 |
-| `./server` | `setupMockingServer` | Node SSR 런타임 |
+| 엔트리      | 내용                                                                                                   | 성격                 |
+| ----------- | ------------------------------------------------------------------------------------------------------ | -------------------- |
+| `.`         | `HandlerConfigOption`, `MockingConfig`, `SwaggerSourceConfigOption` (type only)                        | 공유 타입 계약       |
+| `./browser` | `MockingGUIBoundary`                                                                                   | 브라우저 런타임      |
+| `./server`  | `setupMockingServer`                                                                                   | Node SSR 런타임      |
 | `./testing` | `defineHandlers`, `defineScenario`, `extendScenario`, `serializeScenario`, `applyScenario`, `Scenario` | **혼재** (아래 참조) |
 
 ### 2.2 확인된 문제
@@ -45,24 +45,24 @@ PR #18(`1.0.6-alpha.1`)로 배포된 시나리오 저작·주입 API를 대상�
 
 ### 2.3 참고한 라이브러리 관리 방식
 
-| 라이브러리 | 구조 | 교훈 |
-| --- | --- | --- |
-| msw | `msw` / `msw/browser` / `msw/node` / `msw/native` | 선언 계층과 런타임 어댑터 계층을 서브패스로 분리 |
-| vitest | `vitest` / `vitest/config` / `vitest/node` / `vitest/browser` | root는 매일 쓰는 최소 표면. 역할별 진입점 |
-| react-dom | `react-dom/client` / `react-dom/server` / `react-dom/test-utils` | 테스트 유틸도 "환경"의 하나로 별도 경로 |
-| @apollo/client | `@apollo/client/testing` | `testing` 경로는 **테스트에서만 의미 있는 것**(MockedProvider 등)에 한정 |
-| React / Remix / TanStack | `unstable_` · `experimental_` 심볼 접두 | 정식화 시 접두 제거 + 1 minor deprecated alias 유지 |
-| Angular | JSDoc `@experimental` / `@developerPreview` | 경로 변경 없이 문서·타입 힌트로만 표시 |
+| 라이브러리               | 구조                                                             | 교훈                                                                     |
+| ------------------------ | ---------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| msw                      | `msw` / `msw/browser` / `msw/node` / `msw/native`                | 선언 계층과 런타임 어댑터 계층을 서브패스로 분리                         |
+| vitest                   | `vitest` / `vitest/config` / `vitest/node` / `vitest/browser`    | root는 매일 쓰는 최소 표면. 역할별 진입점                                |
+| react-dom                | `react-dom/client` / `react-dom/server` / `react-dom/test-utils` | 테스트 유틸도 "환경"의 하나로 별도 경로                                  |
+| @apollo/client           | `@apollo/client/testing`                                         | `testing` 경로는 **테스트에서만 의미 있는 것**(MockedProvider 등)에 한정 |
+| React / Remix / TanStack | `unstable_` · `experimental_` 심볼 접두                          | 정식화 시 접두 제거 + 1 minor deprecated alias 유지                      |
+| Angular                  | JSDoc `@experimental` / `@developerPreview`                      | 경로 변경 없이 문서·타입 힌트로만 표시                                   |
 
 브라우저 자동화 도구의 "부팅 전 스크립트 주입 + 쿠키 세팅" API 비교:
 
-| 도구 | 주입 | 쿠키 | 현재 `applyScenario` 구조 타입 |
-| --- | --- | --- | --- |
-| Playwright | `context.addInitScript(fn, arg)` | `context.addCookies([...])` | 호환 |
-| WebdriverIO v9 | `browser.addInitScript(fn, arg)` (WebDriver BiDi `script.addPreloadScript`) | `browser.setCookies([...])` | 메서드명 1개 차이 |
-| Puppeteer | `page.evaluateOnNewDocument(fn, ...args)` | `browserContext.setCookie(...)` | 이름·시그니처 다름, 의미 동일 |
-| Cypress | `cy.visit(url, { onBeforeLoad })` | `cy.setCookie` | 인프로세스 모델. `serializeScenario`만 필요 |
-| Vitest browser mode / Storybook | 페이지 내부 실행 | 페이지 내부 실행 | 어댑터 불필요. `serializeScenario` 결과를 직접 씀 |
+| 도구                            | 주입                                                                        | 쿠키                            | 현재 `applyScenario` 구조 타입                    |
+| ------------------------------- | --------------------------------------------------------------------------- | ------------------------------- | ------------------------------------------------- |
+| Playwright                      | `context.addInitScript(fn, arg)`                                            | `context.addCookies([...])`     | 호환                                              |
+| WebdriverIO v9                  | `browser.addInitScript(fn, arg)` (WebDriver BiDi `script.addPreloadScript`) | `browser.setCookies([...])`     | 메서드명 1개 차이                                 |
+| Puppeteer                       | `page.evaluateOnNewDocument(fn, ...args)`                                   | `browserContext.setCookie(...)` | 이름·시그니처 다름, 의미 동일                     |
+| Cypress                         | `cy.visit(url, { onBeforeLoad })`                                           | `cy.setCookie`                  | 인프로세스 모델. `serializeScenario`만 필요       |
+| Vitest browser mode / Storybook | 페이지 내부 실행                                                            | 페이지 내부 실행                | 어댑터 불필요. `serializeScenario` 결과를 직접 씀 |
 
 결론: 어댑터가 필요한 부류는 "프로세스 밖에서 브라우저를 조종하는 도구" 전부이고, 인프로세스 도구는 직렬화 함수만 필요하다. 두 함수는 같은 도메인(시나리오 주입)의 두 층이며, 어댑터 본체가 수십 줄이라 경로를 따로 나눌 관리 단위가 되지 않는다.
 
@@ -70,13 +70,13 @@ PR #18(`1.0.6-alpha.1`)로 배포된 시나리오 저작·주입 API를 대상�
 
 ### 3.1 엔트리 구조 (정식화 후, 목표 `1.1.0`)
 
-| 엔트리 | 성격 | 내용 |
-| --- | --- | --- |
-| `.` | **타입 계약만.** 기존 정체성 유지, 값 export 금지 | 기존 3 타입 + `ReadonlyHandlerConfig`, `Scenario` |
-| `./browser` | 브라우저 런타임 | `MockingGUIBoundary` (변경 없음) |
-| `./server` | Node SSR 런타임 | `setupMockingServer` (변경 없음) |
-| `./scenario` | **시나리오 도메인.** 저작(순수) + 직렬화(순수) + 자동화 드라이버 주입 어댑터 | `defineRegistry`, `defineScenario`, `extendScenario`, `serializeScenario`, `applyScenario` + `HandlerRegistry`, `Selection`, `ScenarioOptions`, `ApplyScenarioOptions`, `InitScriptCapable` 타입 |
-| `./experimental` | **실험실.** semver 보장 제외 | alpha/beta 단계 기능 전체 |
+| 엔트리           | 성격                                                                         | 내용                                                                                                                                                                                             |
+| ---------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `.`              | **타입 계약만.** 기존 정체성 유지, 값 export 금지                            | 기존 3 타입 + `ReadonlyHandlerConfig`, `Scenario`                                                                                                                                                |
+| `./browser`      | 브라우저 런타임                                                              | `MockingGUIBoundary` (변경 없음)                                                                                                                                                                 |
+| `./server`       | Node SSR 런타임                                                              | `setupMockingServer` (변경 없음)                                                                                                                                                                 |
+| `./scenario`     | **시나리오 도메인.** 저작(순수) + 직렬화(순수) + 자동화 드라이버 주입 어댑터 | `defineRegistry`, `defineScenario`, `extendScenario`, `serializeScenario`, `applyScenario` + `HandlerRegistry`, `Selection`, `ScenarioOptions`, `ApplyScenarioOptions`, `InitScriptCapable` 타입 |
+| `./experimental` | **실험실.** semver 보장 제외                                                 | alpha/beta 단계 기능 전체                                                                                                                                                                        |
 
 원칙:
 
@@ -110,17 +110,17 @@ PR #18(`1.0.6-alpha.1`)로 배포된 시나리오 저작·주입 API를 대상�
 
 ### 3.3 이번 사이클 변경 (`1.0.6-alpha.2`)
 
-| # | 변경 | 근거 |
-| --- | --- | --- |
-| A | `src/experimental.ts` 신설, `./experimental` exports/typesVersions/vite entry 추가. `src/testing.ts`·`./testing` 제거 | §3.2 규칙 1 |
-| B | `defineHandlers` → `defineRegistry` rename | 반환 타입 `HandlerRegistry`와 일치. `define*` 패밀리(`defineScenario`) 일관성. alpha 기간이므로 alias 없음 |
-| C | `HandlerRegistry.handlers: T` 추가 | 선언한 핸들러를 `mocks`에 그대로 넘기는 재사용 경로(리뷰 Q2). 선언 API가 테스트 전용이 아님을 코드로 증명 |
-| D | `ReadonlyHandlerConfig` root export. `Scenario`도 root로 승격 | stable `MockingConfig.mocks`의 타입. `Scenario`는 GUI 런타임 입력과 주입 API가 공유하는 계약 |
-| E | `src/api/*` → `src/api/scenario/*`로 디렉터리 정리 | 정식화 때 barrel 한 줄만 바뀌게 |
-| F | Node 환경 스모크 테스트: `// @vitest-environment node`에서 `../experimental` import 후 5개 심볼이 함수임을 확인, `applyScenario`를 fake `InitScriptCapable`로 end-to-end 실행 | §2.2-5 보증 |
-| G | 5개 엔트리 surface 스냅샷 테스트 | §3.2 규칙 6 |
-| H | 문서: `docs/guide/usage/api-guide.md`에 "Entry points" 절 + experimental 정책, `scenario-guide.md`에 "Programmatic scenarios & injection" 절 | PR Action item |
-| I | `InitScriptCapable`의 쿠키 메서드를 `addCookies` 또는 `setCookies` 중 하나로 허용 | WebdriverIO v9 무비용 호환. 구조 타입 변경만 |
+| #   | 변경                                                                                                                                                                          | 근거                                                                                                       |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| A   | `src/experimental.ts` 신설, `./experimental` exports/typesVersions/vite entry 추가. `src/testing.ts`·`./testing` 제거                                                         | §3.2 규칙 1                                                                                                |
+| B   | `defineHandlers` → `defineRegistry` rename                                                                                                                                    | 반환 타입 `HandlerRegistry`와 일치. `define*` 패밀리(`defineScenario`) 일관성. alpha 기간이므로 alias 없음 |
+| C   | `HandlerRegistry.handlers: T` 추가                                                                                                                                            | 선언한 핸들러를 `mocks`에 그대로 넘기는 재사용 경로(리뷰 Q2). 선언 API가 테스트 전용이 아님을 코드로 증명  |
+| D   | `ReadonlyHandlerConfig` root export. `Scenario`도 root로 승격                                                                                                                 | stable `MockingConfig.mocks`의 타입. `Scenario`는 GUI 런타임 입력과 주입 API가 공유하는 계약               |
+| E   | `src/api/*` → `src/api/scenario/*`로 디렉터리 정리                                                                                                                            | 정식화 때 barrel 한 줄만 바뀌게                                                                            |
+| F   | Node 환경 스모크 테스트: `// @vitest-environment node`에서 `../experimental` import 후 5개 심볼이 함수임을 확인, `applyScenario`를 fake `InitScriptCapable`로 end-to-end 실행 | §2.2-5 보증                                                                                                |
+| G   | 5개 엔트리 surface 스냅샷 테스트                                                                                                                                              | §3.2 규칙 6                                                                                                |
+| H   | 문서: `docs/guide/usage/api-guide.md`에 "Entry points" 절 + experimental 정책, `scenario-guide.md`에 "Programmatic scenarios & injection" 절                                  | PR Action item                                                                                             |
+| I   | `InitScriptCapable`의 쿠키 메서드를 `addCookies` 또는 `setCookies` 중 하나로 허용                                                                                             | WebdriverIO v9 무비용 호환. 구조 타입 변경만                                                               |
 
 **Readonly 타입 가이드(문서에 명시)**
 

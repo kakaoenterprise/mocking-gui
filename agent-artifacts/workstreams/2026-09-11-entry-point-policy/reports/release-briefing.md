@@ -18,23 +18,27 @@ by this branch).
 - `./testing` → `./experimental`
 - `defineHandlers` → `defineRegistry`
 
-Two-line codemod for consumers migrating from `1.0.6-alpha.1`:
+Portable two-step codemod for consumers migrating from `1.0.6-alpha.1`:
 
 ```bash
-grep -rl "mocking-gui/testing" src e2e | xargs sed -i '' 's#mocking-gui/testing#mocking-gui/experimental#g; s/defineHandlers/defineRegistry/g'
+grep -rl "mocking-gui/testing" src e2e | xargs perl -pi -e 's#mocking-gui/testing#mocking-gui/experimental#g'
+grep -rl "defineHandlers" src e2e | xargs perl -pi -e 's/\bdefineHandlers\b/defineRegistry/g'
 ```
 
 ## New
 
-- `registry.handlers` — the handler list is now accessed as a property on
-  the registry object returned by `defineRegistry`, rather than the
-  registry itself being the handler list.
+- `registry.handlers` — exposes the original handler collection, so one
+  declaration feeds both `MockingConfig.mocks` and scenario authoring.
 - `ReadonlyHandlerConfig` / `Scenario` types exported from the package root.
 - `applyScenario` accepts WebdriverIO-shaped drivers (`addCookies` or
   `setCookies`), not only Playwright-shaped ones.
 - Per-entry surface tests under `src/__tests__/entries/` guard the exported
   shape of `./experimental`, `./browser`, and `./server` against accidental
   drift.
+- `src/api/scenario/index.ts` exports six extra types (`DefinedHandler`,
+  `HandlerByName`, `HandlerNameOf`, `HandlerRef`, `VariantName`,
+  `ScenarioStateEntry`) beyond spec §3.1 because they appear in public
+  signatures and are needed for declaration emit.
 
 ## Policy
 
@@ -47,6 +51,11 @@ scenario API: a dedicated `./scenario` subpath in `1.1.0`.
 
 - Dynamic `responseVariantsFn` scenarios.
 - The Puppeteer helper for `applyScenario`.
+
+## Deferred to PR #21 (repo automation)
+
+- CI `Test & Coverage` job will run the surface tests.
+- `CHANGELOG.md` via release-it will carry the breaking-change notes.
 
 ## Verification scope note
 

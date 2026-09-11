@@ -82,7 +82,7 @@ Picking the same handler twice inside one `defineScenario` is a compile error; u
 
 ### 3. Inject before boot
 
-**Playwright / WebdriverIO v9** (any driver with `addInitScript` and `addCookies` or `setCookies`):
+**Playwright** (verified target; any driver with `addInitScript` and `addCookies` or `setCookies`):
 
 ```ts
 import { applyScenario } from '@kakaocloud/mocking-gui/experimental';
@@ -93,7 +93,7 @@ test('renders users', async ({ context, page }) => {
 });
 ```
 
-`ssr: true` also writes the sync cookie so a server-rendered first paint sees the same scenario.
+`ssr: true` also writes the sync cookie so a server-rendered first paint sees the same scenario. WebdriverIO v9 drivers are accepted (`addInitScript` + `setCookies`), and localStorage seeding works before navigation, but its `setCookies` scopes cookies to the current page, so call `applyScenario` with `ssr: true` only after navigating to `origin`.
 
 **Cypress, Storybook, or anything running inside the page**: use `serializeScenario` and write the pair to `localStorage` yourself.
 

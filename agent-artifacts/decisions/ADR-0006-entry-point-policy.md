@@ -47,14 +47,14 @@ PR #18 shipped a scenario authoring and injection API (`defineHandlers`, `define
 
 ### Options considered
 
-| Option | Experimental marker | Graduated home of scenario API | Verdict |
-| --- | --- | --- | --- |
-| A | `./experimental` subpath | root (values + types) | Rejected: root loses type-only identity; management point diffuses |
-| B | `./experimental` subpath | root for pure declarations, `./testing` for adapters | Rejected: `testing` asserts a usage, not a nature; adapters are not test-only |
-| C | `./experimental` subpath | `./scenario` for declarations + serializer, `./playwright` (later `./automation`) for adapter | Rejected: adapter body is tens of lines; not a management unit worth its own entry. The BiDi-standardized shape means one structural type covers Playwright and WebdriverIO |
-| **D** | **`./experimental` subpath** | **`./scenario` for the whole domain (declare, serialize, inject)** | **Chosen** |
-| E | `unstable_` symbol prefix (React/Remix) | any | Rejected as sole marker: requires renames at graduation and puts unstable symbols into stable entries' surface |
-| F | JSDoc `@experimental` only (Angular) | any | Rejected as sole marker: invisible at the import site; kept as a secondary annotation |
+| Option | Experimental marker                     | Graduated home of scenario API                                                                | Verdict                                                                                                                                                                     |
+| ------ | --------------------------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A      | `./experimental` subpath                | root (values + types)                                                                         | Rejected: root loses type-only identity; management point diffuses                                                                                                          |
+| B      | `./experimental` subpath                | root for pure declarations, `./testing` for adapters                                          | Rejected: `testing` asserts a usage, not a nature; adapters are not test-only                                                                                               |
+| C      | `./experimental` subpath                | `./scenario` for declarations + serializer, `./playwright` (later `./automation`) for adapter | Rejected: adapter body is tens of lines; not a management unit worth its own entry. The BiDi-standardized shape means one structural type covers Playwright and WebdriverIO |
+| **D**  | **`./experimental` subpath**            | **`./scenario` for the whole domain (declare, serialize, inject)**                            | **Chosen**                                                                                                                                                                  |
+| E      | `unstable_` symbol prefix (React/Remix) | any                                                                                           | Rejected as sole marker: requires renames at graduation and puts unstable symbols into stable entries' surface                                                              |
+| F      | JSDoc `@experimental` only (Angular)    | any                                                                                           | Rejected as sole marker: invisible at the import site; kept as a secondary annotation                                                                                       |
 
 Ecosystem references: msw (`msw` / `msw/browser` / `msw/node`), vitest (`vitest/config`,
 `vitest/node`, `vitest/browser`), react-dom (`/client`, `/server`, `/test-utils`),
@@ -69,13 +69,13 @@ one-minor deprecated alias.
 
 **We choose Option D.**
 
-| Entry | Nature | Contents (after graduation, target 1.1.0) |
-| --- | --- | --- |
-| `.` | Type-only shared contract | existing types + `ReadonlyHandlerConfig`, `Scenario` |
-| `./browser` | Browser runtime | `MockingGUIBoundary` |
-| `./server` | Node SSR runtime | `setupMockingServer` |
-| `./scenario` | Scenario domain: authoring, serialization, driver injection | `defineRegistry`, `defineScenario`, `extendScenario`, `serializeScenario`, `applyScenario` + their types |
-| `./experimental` | Staging entry, excluded from semver | every alpha/beta feature |
+| Entry            | Nature                                                      | Contents (after graduation, target 1.1.0)                                                                |
+| ---------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `.`              | Type-only shared contract                                   | existing types + `ReadonlyHandlerConfig`, `Scenario`                                                     |
+| `./browser`      | Browser runtime                                             | `MockingGUIBoundary`                                                                                     |
+| `./server`       | Node SSR runtime                                            | `setupMockingServer`                                                                                     |
+| `./scenario`     | Scenario domain: authoring, serialization, driver injection | `defineRegistry`, `defineScenario`, `extendScenario`, `serializeScenario`, `applyScenario` + their types |
+| `./experimental` | Staging entry, excluded from semver                         | every alpha/beta feature                                                                                 |
 
 Policy:
 

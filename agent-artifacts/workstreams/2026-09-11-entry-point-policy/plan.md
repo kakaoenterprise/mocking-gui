@@ -27,33 +27,35 @@
 
 ## File Structure
 
-| Path | Responsibility | Action |
-| --- | --- | --- |
-| `src/api/scenario/define.ts` | `defineRegistry`, `defineHandler`, registry types | move from `src/api/define.ts`, rename export |
-| `src/api/scenario/scenario.ts` | `defineScenario`, `extendScenario`, `Unique` | move from `src/api/scenario.ts` |
-| `src/api/scenario/serialize.ts` | `serializeScenario`, `serializeScenarioCookie` | move from `src/api/serialize.ts` |
-| `src/api/scenario/adapter.ts` | `applyScenario`, `InitScriptCapable` | move from `src/api/adapter.ts`, relax cookie method |
-| `src/api/scenario/index.ts` | Domain barrel: the exact surface a future `./scenario` entry will expose | create |
-| `src/api/scenario/__tests__/**` | existing tests | move from `src/api/__tests__/**`, fix relative imports |
-| `src/experimental.ts` | Staging barrel; re-exports `./api/scenario` with `@experimental` JSDoc | create |
-| `src/testing.ts` | — | delete |
-| `src/index.ts` | Type-only root; add `ReadonlyHandlerConfig`, `Scenario` | modify |
-| `src/__tests__/entries/*.surface.test.ts` | Per-entry export surface guards | create (4 files) |
-| `package.json`, `vite.config.ts`, `tsconfig.test.json` | entry wiring | modify |
-| `docs/guide/usage/api-guide.md`, `docs/guide/usage/scenario-guide.md`, `packages/mocking-gui/README.md` | policy + usage docs | modify |
-| `examples/react-csr/src/mocks/handlers.ts`, `config.ts` | prove `registry.handlers` → `mocks` reuse compiles | modify |
+| Path                                                                                                    | Responsibility                                                           | Action                                                 |
+| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------ |
+| `src/api/scenario/define.ts`                                                                            | `defineRegistry`, `defineHandler`, registry types                        | move from `src/api/define.ts`, rename export           |
+| `src/api/scenario/scenario.ts`                                                                          | `defineScenario`, `extendScenario`, `Unique`                             | move from `src/api/scenario.ts`                        |
+| `src/api/scenario/serialize.ts`                                                                         | `serializeScenario`, `serializeScenarioCookie`                           | move from `src/api/serialize.ts`                       |
+| `src/api/scenario/adapter.ts`                                                                           | `applyScenario`, `InitScriptCapable`                                     | move from `src/api/adapter.ts`, relax cookie method    |
+| `src/api/scenario/index.ts`                                                                             | Domain barrel: the exact surface a future `./scenario` entry will expose | create                                                 |
+| `src/api/scenario/__tests__/**`                                                                         | existing tests                                                           | move from `src/api/__tests__/**`, fix relative imports |
+| `src/experimental.ts`                                                                                   | Staging barrel; re-exports `./api/scenario` with `@experimental` JSDoc   | create                                                 |
+| `src/testing.ts`                                                                                        | —                                                                        | delete                                                 |
+| `src/index.ts`                                                                                          | Type-only root; add `ReadonlyHandlerConfig`, `Scenario`                  | modify                                                 |
+| `src/__tests__/entries/*.surface.test.ts`                                                               | Per-entry export surface guards                                          | create (4 files)                                       |
+| `package.json`, `vite.config.ts`, `tsconfig.test.json`                                                  | entry wiring                                                             | modify                                                 |
+| `docs/guide/usage/api-guide.md`, `docs/guide/usage/scenario-guide.md`, `packages/mocking-gui/README.md` | policy + usage docs                                                      | modify                                                 |
+| `examples/react-csr/src/mocks/handlers.ts`, `config.ts`                                                 | prove `registry.handlers` → `mocks` reuse compiles                       | modify                                                 |
 
 ---
 
 ### Task 1: Move scenario code into `src/api/scenario/` and add the domain barrel
 
 **Files:**
+
 - Move: `src/api/{define,scenario,serialize,adapter}.ts` → `src/api/scenario/`
 - Move: `src/api/__tests__/` → `src/api/scenario/__tests__/`
 - Create: `src/api/scenario/index.ts`
 - Modify: `src/testing.ts` (temporary — re-point imports; deleted in Task 3)
 
 **Interfaces:**
+
 - Produces: module `src/api/scenario/index.ts` exporting `applyScenario`, `defineHandlers` (renamed in Task 2), `defineScenario`, `extendScenario`, `serializeScenario` and the types `HandlerRegistry`, `Selection`, `HandlerRef`, `VariantName`, `HandlerNameOf`, `HandlerByName`, `DefinedHandler`, `ScenarioOptions`, `ApplyScenarioOptions`, `InitScriptCapable`, `ScenarioStateEntry`.
 
 - [ ] **Step 1: Move files with git so history is preserved**
@@ -141,12 +143,14 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 ### Task 2: Rename `defineHandlers` → `defineRegistry` and expose `registry.handlers`
 
 **Files:**
+
 - Modify: `src/api/scenario/define.ts`
 - Modify: `src/api/scenario/index.ts`, `src/testing.ts`
 - Modify: all files under `src/api/scenario/__tests__/` that reference `defineHandlers`
 - Test: `src/api/scenario/__tests__/unit/define.test.ts`
 
 **Interfaces:**
+
 - Produces: `export function defineRegistry<const T extends readonly ReadonlyHandlerConfig[]>(handlers: T & NoUnknownKeys<T>): HandlerRegistry<T>`; `HandlerRegistry<T>` gains `readonly handlers: T`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -154,17 +158,22 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 Append to `src/api/scenario/__tests__/unit/define.test.ts` (inside the existing `describe('defineHandlers', …)` block, which Step 3 renames):
 
 ```ts
-  it('exposes the original handler collection as `handlers` for runtime reuse', () => {
-    const handlers = [
-      { name: 'Users', url: '/api/users', method: 'get', responseVariants: [{ name: 'Success', status: 200 }] },
-    ] as const;
-    const registry = defineRegistry(handlers);
+it('exposes the original handler collection as `handlers` for runtime reuse', () => {
+  const handlers = [
+    {
+      name: 'Users',
+      url: '/api/users',
+      method: 'get',
+      responseVariants: [{ name: 'Success', status: 200 }],
+    },
+  ] as const;
+  const registry = defineRegistry(handlers);
 
-    expect(registry.handlers).toBe(handlers);
-    // Type-level: assignable to MockingConfig['mocks']
-    const mocks: MockingConfig['mocks'] = registry.handlers;
-    expect(mocks).toHaveLength(1);
-  });
+  expect(registry.handlers).toBe(handlers);
+  // Type-level: assignable to MockingConfig['mocks']
+  const mocks: MockingConfig['mocks'] = registry.handlers;
+  expect(mocks).toHaveLength(1);
+});
 ```
 
 Add to the file's type imports: `import type { MockingConfig } from '../../../../types/config';` (merge into the existing `import type { … } from '../../../../types/config'` line).
@@ -223,6 +232,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 ### Task 3: Add the `./experimental` entry and remove `./testing`
 
 **Files:**
+
 - Create: `src/experimental.ts`
 - Delete: `src/testing.ts`
 - Modify: `package.json` (`exports`, `typesVersions`), `vite.config.ts` (`build.lib.entry`)
@@ -230,6 +240,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 - Modify: `tsconfig.test.json` (`include`)
 
 **Interfaces:**
+
 - Produces: subpath `@kakaocloud/mocking-gui/experimental` exporting exactly the five functions plus the types from `src/api/scenario/index.ts` and `Scenario`.
 
 - [ ] **Step 1: Write the surface test (move + rewrite the existing one)**
@@ -398,10 +409,12 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 ### Task 4: Root type exports and surface tests for `index`, `server`, `browser`
 
 **Files:**
+
 - Modify: `src/index.ts`
 - Create: `src/__tests__/entries/index.surface.test.ts`, `server.surface.test.ts`, `browser.surface.test.ts`
 
 **Interfaces:**
+
 - Produces: root exports `ReadonlyHandlerConfig` and `Scenario` types.
 
 - [ ] **Step 1: Write the failing root surface test**
@@ -442,7 +455,12 @@ describe('root entry surface', () => {
 
   it('accepts an as-const handler collection as MockingConfig.mocks', () => {
     const handlers = [
-      { name: 'Users', url: '/api/users', method: 'get', responseVariants: [{ name: 'Success', status: 200 }] },
+      {
+        name: 'Users',
+        url: '/api/users',
+        method: 'get',
+        responseVariants: [{ name: 'Success', status: 200 }],
+      },
     ] as const satisfies readonly ReadonlyHandlerConfig[];
     const config: MockingConfig = { mocks: handlers };
     expect(config.mocks).toHaveLength(1);
@@ -532,10 +550,12 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 ### Task 5: Accept `setCookies` as well as `addCookies` in `applyScenario`
 
 **Files:**
+
 - Modify: `src/api/scenario/adapter.ts`
 - Test: `src/api/scenario/__tests__/unit/adapter.test.ts`
 
 **Interfaces:**
+
 - Produces: `InitScriptCapable` = `{ addInitScript(...) } & ({ addCookies(...) } | { setCookies(...) })`. `applyScenario` signature unchanged.
 
 - [ ] **Step 1: Write the failing test**
@@ -560,14 +580,14 @@ class FakeWdioBrowser {
 and inside `describe('applyScenario', …)`:
 
 ```ts
-  it('uses setCookies when the driver exposes that instead of addCookies (WebdriverIO shape)', async () => {
-    const browser = new FakeWdioBrowser();
-    await applyScenario(browser, scenario, { origin: ORIGIN, ssr: true });
+it('uses setCookies when the driver exposes that instead of addCookies (WebdriverIO shape)', async () => {
+  const browser = new FakeWdioBrowser();
+  await applyScenario(browser, scenario, { origin: ORIGIN, ssr: true });
 
-    expect(browser.addInitScriptCalls).toHaveLength(1);
-    expect(browser.setCookiesCalls).toHaveLength(1);
-    expect(browser.setCookiesCalls[0][0]).toMatchObject({ url: ORIGIN });
-  });
+  expect(browser.addInitScriptCalls).toHaveLength(1);
+  expect(browser.setCookiesCalls).toHaveLength(1);
+  expect(browser.setCookiesCalls[0][0]).toMatchObject({ url: ORIGIN });
+});
 ```
 
 - [ ] **Step 2: Run to verify failure**
@@ -599,7 +619,10 @@ interface InitScriptHost {
  * Playwright's `addInitScript` resolves to a `Disposable` (1.49+).
  */
 export type InitScriptCapable = InitScriptHost &
-  ({ addCookies(cookies: CookieRecord[]): Promise<unknown> } | { setCookies(cookies: CookieRecord[]): Promise<unknown> });
+  (
+    | { addCookies(cookies: CookieRecord[]): Promise<unknown> }
+    | { setCookies(cookies: CookieRecord[]): Promise<unknown> }
+  );
 
 const writeCookies = (context: InitScriptCapable, cookies: CookieRecord[]): Promise<unknown> =>
   'addCookies' in context ? context.addCookies(cookies) : context.setCookies(cookies);
@@ -608,9 +631,9 @@ const writeCookies = (context: InitScriptCapable, cookies: CookieRecord[]): Prom
 and change the `if (options.ssr)` block to:
 
 ```ts
-  if (options.ssr) {
-    await writeCookies(context, [{ ...serializeScenarioCookie(scenario), url: options.origin }]);
-  }
+if (options.ssr) {
+  await writeCookies(context, [{ ...serializeScenarioCookie(scenario), url: options.origin }]);
+}
 ```
 
 - [ ] **Step 4: Run tests and lint**
@@ -632,9 +655,11 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 ### Task 6: Prove runtime reuse in the `react-csr` example
 
 **Files:**
+
 - Modify: `examples/react-csr/src/mocks/handlers.ts`, `examples/react-csr/src/mocks/config.ts`
 
 **Interfaces:**
+
 - Consumes: `defineRegistry` from `@kakaocloud/mocking-gui/experimental`, `registry.handlers`.
 
 - [ ] **Step 1: Read the current handlers file**
@@ -682,6 +707,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 ### Task 7: Documentation — entry points, experimental policy, programmatic scenarios
 
 **Files:**
+
 - Modify: `docs/guide/usage/api-guide.md`, `docs/guide/usage/scenario-guide.md`, `packages/mocking-gui/README.md`
 
 - [ ] **Step 1: Add an "Entry Points" section to `api-guide.md`**
@@ -693,12 +719,12 @@ Insert directly after the intro line (`Definitions of key types …`) and before
 
 The package is split into subpaths by **domain and runtime**, never by assumed usage. The root entry contains types only.
 
-| Import path | Nature | Exports |
-| --- | --- | --- |
-| `@kakaocloud/mocking-gui` | Shared type contract (types only) | `MockingConfig`, `HandlerConfigOption`, `ReadonlyHandlerConfig`, `SwaggerSourceConfigOption`, `Scenario` |
-| `@kakaocloud/mocking-gui/browser` | Browser runtime | `MockingGUIBoundary` |
-| `@kakaocloud/mocking-gui/server` | Node / SSR runtime | `setupMockingServer` |
-| `@kakaocloud/mocking-gui/experimental` | Pre-release features (see below) | currently: scenario authoring & injection API |
+| Import path                            | Nature                            | Exports                                                                                                  |
+| -------------------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `@kakaocloud/mocking-gui`              | Shared type contract (types only) | `MockingConfig`, `HandlerConfigOption`, `ReadonlyHandlerConfig`, `SwaggerSourceConfigOption`, `Scenario` |
+| `@kakaocloud/mocking-gui/browser`      | Browser runtime                   | `MockingGUIBoundary`                                                                                     |
+| `@kakaocloud/mocking-gui/server`       | Node / SSR runtime                | `setupMockingServer`                                                                                     |
+| `@kakaocloud/mocking-gui/experimental` | Pre-release features (see below)  | currently: scenario authoring & injection API                                                            |
 
 ### Experimental features
 
@@ -718,12 +744,22 @@ import type { ReadonlyHandlerConfig } from '@kakaocloud/mocking-gui';
 
 // Preferred: declare inline in defineRegistry — no `as const`, no `satisfies` needed.
 const registry = defineRegistry([
-  { name: 'Users', url: '/api/users', method: 'get', responseVariants: [{ name: 'Success', status: 200 }] },
+  {
+    name: 'Users',
+    url: '/api/users',
+    method: 'get',
+    responseVariants: [{ name: 'Success', status: 200 }],
+  },
 ]);
 
 // When the array lives in its own variable:
 export const handlers = [
-  { name: 'Users', url: '/api/users', method: 'get', responseVariants: [{ name: 'Success', status: 200 }] },
+  {
+    name: 'Users',
+    url: '/api/users',
+    method: 'get',
+    responseVariants: [{ name: 'Success', status: 200 }],
+  },
 ] as const satisfies readonly ReadonlyHandlerConfig[];
 
 // Existing arrays annotated as HandlerConfigOption[] still work; only name
@@ -731,7 +767,7 @@ export const handlers = [
 ```
 ````
 
-Also update the `MockingConfig` snippet in the same file: `mocks?: HandlerConfigOption[];` → `mocks?: readonly ReadonlyHandlerConfig[];` with the comment `/** Handler collection. Accepts \`as const\` declarations. */`.
+Also update the `MockingConfig` snippet in the same file: `mocks?: HandlerConfigOption[];` → `mocks?: readonly ReadonlyHandlerConfig[];` with the comment `/** Handler collection. Accepts \`as const\` declarations. \*/`.
 
 - [ ] **Step 2: Add a "Programmatic Scenarios" section to `scenario-guide.md`**
 
@@ -776,7 +812,9 @@ import { defineScenario, extendScenario } from '@kakaocloud/mocking-gui/experime
 import { registry } from '../src/mocks/registry';
 
 export const happy = defineScenario('happy path', [registry.pick('Users', 'Success')]);
-export const slow = defineScenario('slow list', [registry.pick('Users', 'Success', { delay: 3000 })]);
+export const slow = defineScenario('slow list', [
+  registry.pick('Users', 'Success', { delay: 3000 }),
+]);
 export const failing = extendScenario(happy, 'list fails', [registry.pick('Users', 'Error')]);
 ```
 
@@ -814,11 +852,11 @@ In `packages/mocking-gui/README.md`, after the `### 2. Integration` code block (
 ```markdown
 ### 3. Entry points
 
-| Path | Contents |
-| --- | --- |
-| `@kakaocloud/mocking-gui` | types only |
-| `@kakaocloud/mocking-gui/browser` | `MockingGUIBoundary` |
-| `@kakaocloud/mocking-gui/server` | `setupMockingServer` |
+| Path                                   | Contents                                                                                                                                     |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@kakaocloud/mocking-gui`              | types only                                                                                                                                   |
+| `@kakaocloud/mocking-gui/browser`      | `MockingGUIBoundary`                                                                                                                         |
+| `@kakaocloud/mocking-gui/server`       | `setupMockingServer`                                                                                                                         |
 | `@kakaocloud/mocking-gui/experimental` | pre-release features, outside semver — see the [API guide](https://kakaoenterprise.github.io/mocking-gui/guide/usage/api-guide#entry-points) |
 ```
 
@@ -840,6 +878,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 ### Task 8: Quality gate and run artifacts
 
 **Files:**
+
 - Modify: `agent-artifacts/workstreams/2026-09-11-entry-point-policy/manifest.yaml`
 - Create: `agent-artifacts/workstreams/2026-09-11-entry-point-policy/reports/integrity-validation.md`, `reports/release-briefing.md`
 
@@ -856,6 +895,7 @@ node -e "import('./dist/experimental.js').then(m=>console.log(Object.keys(m).sor
 node -e "console.log(Object.keys(require('./dist/experimental.cjs')).sort())"
 node -e "console.log(Object.keys(require('./package.json').exports))"
 ```
+
 Expected: both print `[ 'applyScenario', 'defineRegistry', 'defineScenario', 'extendScenario', 'serializeScenario' ]`; exports keys are `.`, `./browser`, `./server`, `./experimental`, `./style.css`.
 
 - [ ] **Step 3: Write `reports/integrity-validation.md`**
@@ -865,6 +905,7 @@ Contents: the exact commands from Steps 1–2 and their output (test count, dist
 - [ ] **Step 4: Write `reports/release-briefing.md`**
 
 Sections:
+
 - **Version**: `1.0.6-alpha.2` (bump is done by release-it, not in this branch).
 - **Breaking for alpha.1 users**: `./testing` → `./experimental`; `defineHandlers` → `defineRegistry`. Provide the two-line codemod:
   ```bash
@@ -890,6 +931,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 ```bash
 cp agent-artifacts/workstreams/2026-09-11-entry-point-policy/spec.md agent-artifacts/specs/entry-point-policy.md
 ```
+
 In the run copy set frontmatter `status: promoted` and add `promoted_to: specs/entry-point-policy.md`; in the `specs/` copy set `status: active` and add `origin_run: 2026-09-11-entry-point-policy`. Commit:
 
 ```bash

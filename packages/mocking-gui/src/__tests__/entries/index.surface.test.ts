@@ -31,7 +31,12 @@ describe('root entry surface', () => {
 
   it('accepts an as-const handler collection as MockingConfig.mocks', () => {
     const handlers = [
-      { name: 'Users', url: '/api/users', method: 'get', responseVariants: [{ name: 'Success', status: 200 }] },
+      {
+        name: 'Users',
+        url: '/api/users',
+        method: 'get',
+        responseVariants: [{ name: 'Success', status: 200 }],
+      },
     ] as const satisfies readonly ReadonlyHandlerConfig[];
     const config: MockingConfig = { mocks: handlers };
     expect(config.mocks).toHaveLength(1);

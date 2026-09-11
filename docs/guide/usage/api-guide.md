@@ -27,6 +27,7 @@ Features published under the `alpha` / `beta` npm dist-tags are exported **only*
 `MockingConfig.mocks` accepts `readonly ReadonlyHandlerConfig[]`, so handler collections may be declared with `as const`. That is what lets the scenario API infer handler and variant names as literals.
 
 ```ts
+import { defineRegistry } from '@kakaocloud/mocking-gui/experimental';
 import type { ReadonlyHandlerConfig } from '@kakaocloud/mocking-gui';
 
 // Preferred: declare inline in defineRegistry — no `as const`, no `satisfies` needed.
