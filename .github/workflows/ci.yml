@@ -51,15 +51,16 @@ jobs:
       - uses: ./.github/actions/setup
       - name: Test with coverage
         run: pnpm --filter @kakaocloud/mocking-gui test:coverage
-      # Codecov (GitHub App) posts the PR comment and status checks, including for fork PRs.
-      # CODECOV_TOKEN is only available on push to main; fork PRs upload tokenless (public repo).
+      # Codecov posts the PR comment and status checks, including for fork PRs.
+      # Public repos upload tokenless (verified for fork PRs and main pushes), so no secret is needed.
+      # If Codecov ever requires a token again, add CODECOV_TOKEN and pass `token:` here.
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
           files: packages/mocking-gui/coverage/coverage-final.json
           flags: mocking-gui
-          fail_ci_if_error: true
+          # A Codecov outage must not block contributors; the missing codecov status check is visible anyway.
+          fail_ci_if_error: false
       - name: Upload coverage artifact
         if: always()
         uses: actions/upload-artifact@v4
