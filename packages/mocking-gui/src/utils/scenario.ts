@@ -337,6 +337,34 @@ export const exportScenariosToFile = (
 };
 
 /**
+ * Selects the scenarios of an import batch that can be saved, keeping their original order.
+ * An entry is dropped when its id or name collides with a saved scenario or with an entry
+ * already accepted from this batch.
+ *
+ * @param incoming - The scenarios to import, in source order.
+ * @param existing - The scenarios already saved.
+ * @returns The importable scenarios, in source order.
+ */
+export const selectImportableScenarios = (
+  incoming: Scenario[],
+  existing: Scenario[],
+): Scenario[] => {
+  const ids = new Set(existing.map(({ id }) => id));
+  const names = new Set(existing.map(({ name }) => name.trim()));
+  const importable: Scenario[] = [];
+
+  for (const scenario of incoming) {
+    const name = scenario.name.trim();
+    if (ids.has(scenario.id) || names.has(name)) continue;
+    ids.add(scenario.id);
+    names.add(name);
+    importable.push(scenario);
+  }
+
+  return importable;
+};
+
+/**
  * Parses a JSON file into a list of scenarios.
  * Validates each scenario in the list.
  *
