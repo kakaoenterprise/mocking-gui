@@ -1,38 +1,23 @@
+import { sharedHandlers } from '@shared/mocks';
 import { BASE_ENDPOINT } from '@/constants/api';
 
 import type { HandlerConfigOption } from '@kakaocloud/mocking-gui';
 
-export const handlers: HandlerConfigOption[] = [
+/**
+ * Handlers specific to this example. Shared handlers live in `examples/shared/mocks` and
+ * are reused as-is; add example-only endpoints here.
+ */
+const localHandlers: HandlerConfigOption[] = [
   {
-    name: 'User API',
-    url: `${BASE_ENDPOINT}/user/:username`,
+    name: 'Get CSR Health',
+    description: 'Example-local handler, showing shared and local mocks side by side',
+    url: `${BASE_ENDPOINT}/health`,
     method: 'get',
     responseVariants: [
-      {
-        name: 'Success',
-        status: 200,
-        body: {
-          id: '1',
-          name: 'Ria Ang',
-          role: 'User',
-          features: ['Dashboard'],
-        },
-      },
-      {
-        name: 'Admin',
-        status: 200,
-        body: {
-          id: '2',
-          name: 'Admin User',
-          role: 'Admin',
-          features: ['Dashboard', 'Settings'],
-        },
-      },
-      {
-        name: 'Unauthorized',
-        status: 401,
-        body: { error: 'Unauthorized' },
-      },
+      { name: 'Healthy', status: 200, body: { status: 'ok', renderer: 'csr' } },
+      { name: 'Degraded', status: 503, body: { status: 'degraded', renderer: 'csr' } },
     ],
   },
 ];
+
+export const handlers: HandlerConfigOption[] = [...sharedHandlers, ...localHandlers];

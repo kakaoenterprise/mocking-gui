@@ -10,8 +10,8 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "lint:fix": "turbo run lint:fix",
+    "lint": "turbo run lint && pnpm lint:shared",
+    "lint:fix": "turbo run lint:fix && pnpm lint:shared --fix",
     "format": "prettier --write \"**/*.{ts,tsx,md,json,js,mjs,cjs}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md,json,js,mjs,cjs}\"",
     "mocking-gui:build": "pnpm --filter @kakaocloud/mocking-gui build",
@@ -19,7 +19,8 @@
     "docs:dev": "pnpm --filter @mocking-gui/docs dev",
     "docs:build": "pnpm --filter @mocking-gui/docs build",
     "docs:preview": "pnpm --filter @mocking-gui/docs preview",
-    "docs:deploy": "pnpm --filter @mocking-gui/docs deploy"
+    "docs:deploy": "pnpm --filter @mocking-gui/docs deploy",
+    "lint:shared": "eslint --config examples/shared/eslint.config.mjs examples/shared"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
@@ -31,7 +32,9 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
     "eslint-plugin-unused-imports": "^4.1.4",
-    "turbo": "2.5.4"
+    "turbo": "2.5.4",
+    "@kakaocloud/mocking-gui": "workspace:*",
+    "@mocking-gui/eslint-config": "workspace:*"
   },
   "engines": {
     "node": ">=22.0.0",

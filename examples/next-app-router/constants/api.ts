@@ -1,2 +1,2 @@
-// Petstore3 API Endpoint
-export const BASE_ENDPOINT = 'https://petstore3.swagger.io/api/v3';
+// Petstore3 API Endpoint, shared with every example via examples/shared/mocks
+export { BASE_ENDPOINT } from '@shared/mocks/constants/endpoints';
