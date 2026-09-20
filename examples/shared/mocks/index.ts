@@ -5,4 +5,5 @@ export * from './factories/order';
 export * from './factories/user';
 export * from './handlers';
 export * from './types';
+export * from './utils/path';
 export * from './utils/request';

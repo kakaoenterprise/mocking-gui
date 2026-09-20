@@ -1,3 +1,4 @@
+import { ApiPlayground } from './features/playground/components/ApiPlayground';
 import { UserProfile } from './features/user/components/UserProfile';
 
 function App() {
@@ -11,8 +12,15 @@ function App() {
           </p>
         </header>
 
-        <main className="space-y-8">
-          <UserProfile />
+        <main className="space-y-12">
+          <section>
+            <h2 className="text-lg font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+              Feature module
+            </h2>
+            <UserProfile />
+          </section>
+
+          <ApiPlayground />
         </main>
       </div>
     </div>

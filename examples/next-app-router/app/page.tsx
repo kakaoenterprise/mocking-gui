@@ -1,6 +1,8 @@
 import { setupMockingServer } from '@kakaocloud/mocking-gui/server';
 import { cookies } from 'next/headers';
 
+import { ClientApiPlayground } from '@/features/playground/components/ClientApiPlayground';
+import { ServerApiPlayground } from '@/features/playground/components/ServerApiPlayground';
 import { UserProfileClient } from '@/features/user/components/UserProfileClient';
 import { UserProfileServer } from '@/features/user/components/UserProfileServer';
 import { mockingConfig } from '@/mocks/config';
@@ -22,9 +24,13 @@ export default async function Home() {
 
   server?.listen();
   let serverContent: React.ReactNode;
+  let serverPlayground: React.ReactNode;
   try {
-    // Ensure the MSW server remains active while rendering the RSC
+    // Ensure the MSW server remains active while rendering the RSC.
+    // Every server-side fetch must resolve inside this window, or it escapes to the
+    // real network.
     serverContent = await UserProfileServer();
+    serverPlayground = await ServerApiPlayground();
   } finally {
     server?.close();
   }
@@ -55,6 +61,32 @@ export default async function Home() {
               Client Component
             </h2>
             <UserProfileClient />
+          </div>
+        </div>
+
+        {/* API Playground */}
+        <div className="mt-16">
+          <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">API Playground</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-8">
+            Every shared mock handler, called from both sides. Server cards re-render through{' '}
+            <code>router.refresh()</code>; client cards refetch in place. Mutations run on the
+            client only.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white border-b pb-2">
+                Server Components (reads only)
+              </h3>
+              {serverPlayground}
+            </div>
+
+            <div>
+              <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white border-b pb-2">
+                Client Components
+              </h3>
+              <ClientApiPlayground />
+            </div>
           </div>
         </div>
 
