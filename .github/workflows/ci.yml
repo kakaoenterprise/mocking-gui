@@ -1,0 +1,83 @@
+name: ci
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Lint (tsc + eslint)
+        run: pnpm lint
+      - name: Format check
+        run: pnpm format:check
+
+  commits:
+    name: Commit messages
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      # Catches commits made with --no-verify or without the husky hooks installed.
+      - name: commitlint (PR commits)
+        run: pnpm commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+      # Squash merges use the PR title as the commit subject, so it must follow the same convention.
+      - name: commitlint (PR title)
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: printf '%s\n' "$PR_TITLE" | pnpm commitlint --verbose
+
+  test:
+    name: Test & Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Test with coverage
+        run: pnpm --filter @kakaocloud/mocking-gui test:coverage
+      # Summary only (no PR comment): fork PRs get a read-only GITHUB_TOKEN, so commenting
+      # from the workflow cannot work for the fork-based flow this repo uses. Coverage is
+      # visible in the job summary (PR check "Details") and as a downloadable artifact.
+      - name: Coverage summary
+        if: always()
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          working-directory: packages/mocking-gui
+          comment-on: none
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: packages/mocking-gui/coverage
+          retention-days: 14
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Build all packages
+        run: pnpm build
+      - name: Verify package contents
+        working-directory: packages/mocking-gui
+        run: |
+          pnpm pack --pack-destination /tmp/pack
+          tar -tzf /tmp/pack/*.tgz | sort

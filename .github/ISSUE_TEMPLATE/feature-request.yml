@@ -1,7 +1,7 @@
 name: 🌟 Feature Request
 description: Suggest a new feature or enhancement for the library
-title: "[FEATURE] "
-labels: ["type: feature"]
+title: '[FEATURE] '
+labels: ['enhancement']
 
 body:
   - type: markdown
@@ -16,7 +16,7 @@ body:
         - [ ] Is it already being discussed in [Discussions](../../discussions)?
         - [ ] Is this a new feature request, not a bug fix?
 
-        > ℹ️ **Tip:** If this is a bug report rather than a feature request, please use the [Bug Report](./bug_report.yml) template.
+        > ℹ️ **Tip:** If this is a bug report rather than a feature request, please use the **Bug Report** template.
 
   - type: textarea
     id: what-would-you-like

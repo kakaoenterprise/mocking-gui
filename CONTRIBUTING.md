@@ -82,25 +82,57 @@ If you want to run everything (including documentation and all examples):
 pnpm dev
 ```
 
-### Style Guide
+### Style Guide & Local Checks
 
 - We use [ESLint](https://eslint.org/) and [Prettier](https://prettier.io/) for code formatting.
-- Please ensure your code passes linting before submitting a PR.
+- Git hooks are installed automatically by `pnpm install` (via [husky](https://typicode.github.io/husky/)):
+  - **pre-commit**: runs ESLint (`--fix`) and Prettier on staged files only ([lint-staged](https://github.com/lint-staged/lint-staged)).
+  - **commit-msg**: validates the message against [Conventional Commits](https://www.conventionalcommits.org/) ([commitlint](https://commitlint.js.org/)).
+- The same checks run again in CI, so a commit made with `--no-verify` will be flagged on the PR.
 
 ```bash
-pnpm lint
+pnpm lint          # tsc + eslint (all packages)
+pnpm format:check  # prettier
+pnpm test          # vitest (all packages)
+pnpm build
 ```
+
+### Commit Messages
+
+Commit messages (and PR titles, which become the squash-merge commit) must follow Conventional Commits. The type decides the next version and the CHANGELOG section:
+
+| Type                                              | Example                                          | Release   |
+| ------------------------------------------------- | ------------------------------------------------ | --------- |
+| `fix`                                             | `fix(swagger): normalize kebab-case path params` | **patch** |
+| `feat`                                            | `feat(panel): add handler search`                | **minor** |
+| `feat!` / `BREAKING CHANGE:`                      | `feat(server)!: rename setupMockingServer`       | **major** |
+| `docs`, `chore`, `ci`, `refactor`, `test`, `perf` | `ci: add coverage report`                        | none      |
+
+Scopes we commonly use: `swagger`, `scenario`, `shadow-root`, `worker`, `server`, `panel`, `ci`, `docs`, `deps`.
+
+> You may write the PR **body** in your preferred language; only the **title** must follow the convention above.
 
 ### Submitting a Pull Request
 
 1.  **Fork** the repository to your own GitHub account.
-2.  **Clone** the repository to your local machine.
+2.  **Clone** the repository to your local machine and run `pnpm install`.
 3.  **Checkout** a new branch from `main`.
 4.  **Make your changes**. Add tests if applicable.
 5.  **Run tests** to ensure all tests pass.
-6.  **Lint and Format** your code.
-7.  **Commit** your changes following our [Conventional Commits](https://www.conventionalcommits.org/) convention.
-8.  **Submit** the Pull Request to the `main` branch.
+6.  **Commit** your changes; the hooks will lint and validate the message for you.
+7.  **Submit** the Pull Request to the `main` branch. CI runs lint, format, commit-message, test/coverage, and build checks.
+
+## Release Process (Maintainers)
+
+Releases are cut from `main` by the [Release workflow](.github/workflows/release.yml) (`Actions` → `Release` → `Run workflow`). It runs [release-it](https://github.com/release-it/release-it) with the config in `packages/mocking-gui/.release-it.json` and, in one step:
+
+1. Runs lint, test, and build.
+2. Derives the next version from Conventional Commits since the last tag (or uses the `increment` input).
+3. Updates `CHANGELOG.md`, commits `chore(release): …`, and pushes the `vX.Y.Z` tag.
+4. Publishes to npm with [provenance](https://docs.npmjs.com/generating-provenance-statements).
+5. Creates the GitHub Release and deploys the documentation site.
+
+Use the `preRelease` input (`alpha` / `beta` / `rc`) for pre-releases and `dryRun` to preview without publishing.
 
 ## Contributor License Agreement
 
