@@ -80,10 +80,11 @@ function App() {
 
 Explore our ready-to-run examples to see it in action:
 
-| Project                                           | Description                               |
-| :------------------------------------------------ | :---------------------------------------- |
-| [**next-app-router**](./examples/next-app-router) | Next.js App Router integration (RSC, CSR) |
-| [**react-csr**](./examples/react-csr)             | Basic React Example (CSR)                 |
+| Project                                           | Description                                                                                              |
+| :------------------------------------------------ | :------------------------------------------------------------------------------------------------------- |
+| [**next-app-router**](./examples/next-app-router) | Next.js App Router integration (RSC, CSR)                                                                |
+| [**react-csr**](./examples/react-csr)             | Basic React Example (CSR)                                                                                |
+| [**showcase**](./examples/showcase)               | Every feature in one page — this is the [live demo](https://kakaoenterprise.github.io/mocking-gui/demo/) |
 
 ## Documentation
 
