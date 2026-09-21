@@ -1,4 +1,4 @@
-name: Release
+name: release
 
 on:
   workflow_dispatch:
@@ -22,14 +22,48 @@ concurrency:
   group: release
   cancel-in-progress: false
 
+# Least privilege by default; the release job raises what it needs.
 permissions:
-  contents: write # push version commit + tag, create GitHub Release
-  id-token: write # npm provenance
+  contents: read
 
 jobs:
+  # Verifies main and produces the exact dist that the release job publishes.
+  # Runs even for dry runs, so a dry run also proves lint/test/build are green.
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: ./.github/actions/setup
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build package
+        run: pnpm --filter @kakaocloud/mocking-gui build
+
+      - name: Upload package dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: mocking-gui-dist
+          path: packages/mocking-gui/dist
+          if-no-files-found: error
+          retention-days: 7
+
   release:
+    name: Release
+    needs: build
     runs-on: ubuntu-latest
     environment: npm
+    permissions:
+      contents: write # push version commit + tag, create GitHub Release
+      id-token: write # npm provenance
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,6 +72,13 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: ./.github/actions/setup
+
+      # package.json#files is ["dist"], so this is the whole published payload.
+      - name: Download package dist
+        uses: actions/download-artifact@v4
+        with:
+          name: mocking-gui-dist
+          path: packages/mocking-gui/dist
 
       - name: Configure git author
         run: |
@@ -62,9 +103,11 @@ jobs:
           if [ "$PRE_RELEASE" != "none" ]; then ARGS+=("--preRelease=$PRE_RELEASE"); fi
           # Dry runs never publish, so skip npm ping/whoami to allow running without NPM_TOKEN.
           if [ "$DRY_RUN" = "true" ]; then ARGS+=("--dry-run" "--npm.skipChecks"); fi
-          pnpm release-it --ci "${ARGS[@]}"
+          # The before:init hook (lint/test/build) already ran as the build job,
+          # and dist came from there -- clearing it keeps the tested artifact.
+          pnpm release-it "${ARGS[@]}" --ci --hooks.before:init=
 
-  deploy-docs:
+  release-docs:
     needs: release
     if: inputs.dryRun == false && inputs.preRelease == 'none'
     uses: ./.github/workflows/release-docs.yml
