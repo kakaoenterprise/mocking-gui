@@ -91,3 +91,60 @@ export const mockConfig: MockingConfig = {
   ],
 };
 ```
+
+## Escape Hatch: `onDemandHandlers`
+
+Mocking GUI only manages the MSW `http` namespace. If your project also uses MSW features that Mocking GUI does not provide — `graphql.*`, `ws.*`, or a handler you intentionally do not want to control from the panel — pass those native `RequestHandler`s through `onDemandHandlers`.
+
+```typescript
+import { graphql, HttpResponse } from 'msw';
+import type { MockingConfig } from '@kakaocloud/mocking-gui';
+
+export const mockConfig: MockingConfig = {
+  // ✅ Every http.* handler belongs here — visible and controllable in the panel
+  mocks: [userHandlers, orderHandlers].flat(),
+
+  // ✅ Only what Mocking GUI cannot express
+  onDemandHandlers: [
+    graphql.query('GetViewer', () => HttpResponse.json({ data: { viewer: { id: '1' } } })),
+  ],
+};
+```
+
+### What `onDemandHandlers` does (and does not) do
+
+`onDemandHandlers` is passed **straight to MSW**. The handlers never enter Mocking GUI's handler store, so:
+
+| Behavior                                     | `mocks` (`HandlerConfigOption`) | `onDemandHandlers` (native MSW) |
+| -------------------------------------------- | ------------------------------- | ------------------------------- |
+| Listed in the API tab of the panel           | ✅                              | ❌ Never                        |
+| Toggle on/off, pick variant, add delay       | ✅                              | ❌ Always on, as you wrote it   |
+| Included in Scenarios                        | ✅                              | ❌                              |
+| Applied on the server (`setupMockingServer`) | ✅                              | ❌ Browser worker only          |
+| Supports `graphql.*` / `ws.*`                | ❌                              | ✅                              |
+
+> [!WARNING]
+> A handler that is in `onDemandHandlers` but not in the panel is **not a bug** — it is the defining property of `onDemandHandlers`. If you expected to see it in the panel, it belongs in `mocks`.
+
+### Migrating an existing MSW project
+
+When converting legacy `setupWorker(...handlers)` code, apply this rule per handler:
+
+| Legacy MSW handler                           | Where it goes                                          |
+| -------------------------------------------- | ------------------------------------------------------ |
+| `http.get / post / put / patch / delete / …` | Convert to `HandlerConfigOption` and put it in `mocks` |
+| `graphql.query / mutation / …`               | Keep as-is, put it in `onDemandHandlers`               |
+| `ws.link(...)`                               | Keep as-is, put it in `onDemandHandlers`               |
+
+Do **not** drop an array of `http.*` handlers into `onDemandHandlers` to save conversion effort. It will "work" in the sense that requests are mocked, but the panel stays empty, nothing can be toggled, and the same handlers are silently missing on the server side. That is the exact situation that gets reported as "Mocking GUI is not showing my handlers".
+
+### Registering the same endpoint in both `mocks` and `onDemandHandlers`
+
+Do not do this. Mocking GUI registers its converted `mocks` **first**, then `onDemandHandlers`, and MSW stops at the first handler that returns a response. A `mocks` entry that is turned off in the panel does not fall through to the next handler — it returns `passthrough()`, which MSW also treats as a response.
+
+| Panel state of the `mocks` entry | Which handler answers the request        |
+| -------------------------------- | ---------------------------------------- |
+| On, variant selected             | The `mocks` entry (selected variant)     |
+| Off / no variant                 | Nobody — request goes to the real server |
+
+In both cases the `onDemandHandlers` copy is dead code. Keep each endpoint in exactly one place.

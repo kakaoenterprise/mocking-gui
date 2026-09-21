@@ -33,7 +33,7 @@ An integrated knowledge base covering the technical identity and internal operat
 ### 1.4. Handler Scope & HTTP-Only Constraint
 
 - **GUI Managed (mocks)**: Only handlers defined as `HandlerConfigOption` can be controlled in real time from the GUI.
-- **HTTP Only**: Currently only the MSW `http` namespace is supported. GraphQL/WebSocket is outside the library scope and there is no separate registration field in `MockingConfig`.
+- **HTTP Only (GUI-managed)**: Only the MSW `http` namespace is GUI-managed. GraphQL/WebSocket handlers can be passed through `MockingConfig.onDemandHandlers`, an escape hatch that goes straight to MSW: not shown in the panel, not toggleable, browser-only. `http.*` handlers must never be placed there. See [Handler Specification](./reference/handler-specification.md).
 - **Swagger Auto Handlers**: Handlers loaded via `swagger[]` configuration are controlled in the GUI via `swaggerResponseVariants`.
 
 ## 2. Decision Tree: Technical Diagnosis

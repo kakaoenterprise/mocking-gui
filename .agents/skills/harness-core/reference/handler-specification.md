@@ -31,6 +31,7 @@ export type MockingConfig = {
   mocks?: HandlerConfigOption[]; // List of manual handlers
   swagger?: SwaggerSourceConfigOption[]; // Swagger auto-loading configuration
   worker?: WorkerStartOptions; // MSW Worker configuration (serviceWorker.url, etc.)
+  onDemandHandlers?: RequestHandler[]; // Escape hatch: native MSW handlers (graphql.*, ws.*) — NOT GUI-managed
 };
 
 // Server-side configuration (for SSR/RSC)
@@ -39,8 +40,11 @@ export type MockingServerConfig = MockingConfig & {
 };
 ```
 
-> **CRITICAL**: `MockingConfig` has only 3 fields: `mocks`, `swagger`, and `worker`.
-> `onDemandHandlers` does not exist. GraphQL/WebSocket handlers are outside the library scope.
+> **CRITICAL — `onDemandHandlers` routing rule**
+>
+> - `onDemandHandlers` is an **escape hatch only** for MSW features Mocking GUI does not provide (`graphql.*`, `ws.*`). It is passed straight to `worker.resetHandlers(...)` **after** the converted `mocks`, never enters the handler store, and is therefore **never shown in the GUI panel**, not toggleable, not part of scenarios, and **ignored by `setupMockingServer`** (browser only).
+> - **Every `http.*` handler MUST be converted to `HandlerConfigOption` and registered in `mocks`.** Putting `http.*` handlers in `onDemandHandlers` during a migration is a defect: it produces an empty panel that users report as "handlers not showing".
+> - **Never register the same endpoint in both `mocks` and `onDemandHandlers`.** `mocks` is registered first; a disabled `mocks` entry returns `passthrough()`, which MSW treats as a response, so the `onDemandHandlers` copy is unreachable in every case.
 
 ---
 

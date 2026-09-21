@@ -25,6 +25,47 @@ The handler's `url` must exactly match the actual request URL. Check whether the
 
 ---
 
+## Handler is registered but does not appear in the panel
+
+### Symptom
+
+Requests are being mocked (you can see mocked responses in the Network tab), but the handler is missing from the API tab of the panel, cannot be toggled, and is not part of any scenario. This is common right after migrating from a plain MSW setup, especially when the migration was done by an AI agent.
+
+### Cause & Solution
+
+**1. The handler was put in `onDemandHandlers` instead of `mocks`**
+
+`onDemandHandlers` is passed straight to MSW and never enters Mocking GUI's handler store, so by design it is **never shown in the panel**. It exists only for MSW features Mocking GUI does not provide (`graphql.*`, `ws.*`).
+
+```typescript
+// ❌ http.* handlers here are mocked but invisible and uncontrollable
+onDemandHandlers: [http.get('/api/user', () => HttpResponse.json({ id: 1 }))],
+
+// ✅ Convert to HandlerConfigOption and register in mocks
+mocks: [
+  {
+    name: 'Get User',
+    url: '/api/user',
+    method: 'get',
+    responseVariants: [{ name: 'Success', status: 200, body: { id: 1 } }],
+  },
+],
+```
+
+Every `http.*` handler should be converted to `HandlerConfigOption` and moved to `mocks`. See [Escape Hatch: `onDemandHandlers`](./usage/handler-guide#escape-hatch-ondemandhandlers) for the full migration rule.
+
+**2. The same endpoint is registered in both `mocks` and `onDemandHandlers`**
+
+The `mocks` entry always takes priority. Mocking GUI registers `mocks` before `onDemandHandlers`, and MSW stops at the first handler that returns a response. When the `mocks` entry is turned off in the panel it returns `passthrough()` — which MSW also counts as a response — so the request goes to the real server and the `onDemandHandlers` copy never runs.
+
+Remove the duplicate from `onDemandHandlers`; keep each endpoint in exactly one place.
+
+**3. Expecting `onDemandHandlers` to work on the server**
+
+`setupMockingServer` only applies `mocks` and `swagger`. Handlers in `onDemandHandlers` are registered in the browser Service Worker only.
+
+---
+
 ## Swagger source is added but fails to load
 
 ### Symptom
