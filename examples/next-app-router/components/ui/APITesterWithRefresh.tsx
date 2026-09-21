@@ -9,7 +9,7 @@ import { APITester } from './APITester';
 interface APITesterWithRefreshProps {
   title: string;
   description: string;
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   url: string;
   status: number | null;
   headers?: Record<string, string>;

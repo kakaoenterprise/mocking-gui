@@ -5,7 +5,7 @@ import { ReactNode, useState } from 'react';
 interface APITesterProps {
   title: string;
   description: string;
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   url: string;
   onRefetch: () => void;
   loading: boolean;
@@ -15,6 +15,10 @@ interface APITesterProps {
   error?: unknown;
   children?: ReactNode;
 }
+
+/** Strings (text, HTML, XML, placeholders) print as-is; everything else as JSON. */
+const formatBody = (value: unknown): string =>
+  typeof value === 'string' ? value : JSON.stringify(value, null, 2);
 
 export function APITester({
   title,
@@ -112,7 +116,7 @@ export function APITester({
           <div className="bg-gray-900 dark:bg-black rounded-lg p-4 overflow-auto max-h-[400px] shadow-inner">
             <pre className="text-sm text-gray-300 font-mono">
               {data || error ? (
-                JSON.stringify(data || error, null, 2)
+                formatBody(data ?? error)
               ) : (
                 <span className="text-gray-500 italic">No data fetched yet...</span>
               )}

@@ -3,7 +3,7 @@ import { PropsWithChildren, useState } from 'react';
 interface APITesterProps extends PropsWithChildren {
   title: string;
   description: string;
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   url: string;
   onRefetch: () => void;
   loading: boolean;
@@ -12,6 +12,10 @@ interface APITesterProps extends PropsWithChildren {
   data: unknown;
   error?: unknown;
 }
+
+/** Strings (text, HTML, XML, placeholders) print as-is; everything else as JSON. */
+const formatBody = (value: unknown): string =>
+  typeof value === 'string' ? value : JSON.stringify(value, null, 2);
 
 export function APITester({
   title,
@@ -97,7 +101,7 @@ export function APITester({
           <pre className="text-sm text-gray-300 font-mono">
             {activeTab === 'body' ? (
               data || error ? (
-                JSON.stringify(data || error, null, 2)
+                formatBody(data ?? error)
               ) : (
                 <span className="text-gray-500 italic">No data fetched yet...</span>
               )
