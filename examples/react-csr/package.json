@@ -19,17 +19,17 @@
     "@kakaocloud/mocking-gui": "workspace:*",
     "@mocking-gui/eslint-config": "workspace:*",
     "@mocking-gui/typescript-config": "workspace:*",
-    "eslint": "^9.28.0",
+    "eslint": "^10.10.0",
     "msw": "^2.12.1",
-    "@tailwindcss/vite": "4.1.11",
+    "@tailwindcss/vite": "4.3.3",
     "@types/react": "^19.2.3",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^4.2.1",
-    "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.32",
-    "tailwindcss": "^4.1.18",
-    "typescript": "^5.2.2",
-    "vite": "^5.2.0"
+    "@vitejs/plugin-react": "^6.1.1",
+    "autoprefixer": "^10.6.1",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0"
   },
   "msw": {
     "workerDirectory": [
