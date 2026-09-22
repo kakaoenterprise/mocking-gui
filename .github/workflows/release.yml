@@ -49,7 +49,7 @@ jobs:
         run: pnpm --filter @kakaocloud/mocking-gui build
 
       - name: Upload package dist
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mocking-gui-dist
           path: packages/mocking-gui/dist
