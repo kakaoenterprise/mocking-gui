@@ -1,0 +1,13 @@
+slug: dependabot-batch-merge
+date: 2026-09-22
+status: pr-open
+summary: Approve된 Dependabot PR 6개를 통합 브랜치 1개로 일괄 반영(PR #35)하고, dependabot.yml을 monthly + 재설계 그룹으로 변경(PR B).
+artifacts:
+  - spec.md
+  - executions/batch-merge-log.md
+  - reports/integrity-validation.md
+related_prs:
+  upstream:
+    - 35   # chore(deps): batch-merge approved dependabot updates
+  included_dependabot: [26, 27, 28, 29, 31, 32]
+  excluded_dependabot: [30, 33, 34]

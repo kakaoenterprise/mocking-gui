@@ -3,21 +3,41 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
     open-pull-requests-limit: 5
     commit-message:
       prefix: 'chore(deps)'
+    # Dependabot applies the first matching group, so specific groups come first.
     groups:
-      dev-tooling:
+      # next minors ship large changes; keep them separate from other example deps.
+      examples-next:
+        patterns: ['next', 'eslint-config-next', '@next/*']
+      docs-site:
+        patterns: ['vitepress', 'vue', 'gh-pages']
+      lint-format-tooling:
+        dependency-type: development
+        patterns:
+          - 'eslint*'
+          - '@eslint/*'
+          - 'typescript-eslint'
+          - 'prettier'
+          - '@commitlint/*'
+          - 'husky'
+          - 'lint-staged'
+          - 'globals'
+      # Remaining dev deps: vite, vitest, typescript, tailwind, @types/*, turbo, release-it, ...
+      build-test-tooling:
         dependency-type: development
         patterns: ['*']
-      radix-ui:
-        patterns: ['@radix-ui/*']
-      examples-next:
-        patterns: ['next', 'eslint-config-next']
+      # Shipped runtime deps of packages/mocking-gui: minor/patch only.
+      # Major bumps intentionally fall through to individual PRs for manual GUI verification.
+      runtime-minor-patch:
+        dependency-type: production
+        patterns: ['*']
+        update-types: ['minor', 'patch']
     ignore:
       # Peer dependencies: bump deliberately, not via bot.
+      # Applies to examples too (next <-> react versions move together).
       - dependency-name: react
       - dependency-name: react-dom
       - dependency-name: msw
@@ -25,7 +45,9 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
     commit-message:
       prefix: 'ci'
+    groups:
+      github-actions:
+        patterns: ['*']
