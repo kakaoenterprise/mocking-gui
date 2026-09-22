@@ -29,3 +29,25 @@ export const ENDPOINTS = {
 export const OPENAPI_DOC_URL = `${import.meta.env.BASE_URL}openapi.json`;
 
 export const GRAPHQL_ENDPOINT = `${API_ORIGIN}/graphql`;
+
+/**
+ * A real, public API — Swagger's own Petstore sandbox.
+ *
+ * Everything above is fiction served by MSW. These two are not: the OpenAPI
+ * document is fetched from the live server at startup, and switching the
+ * handler off sends the request to the real API. That contrast is the point —
+ * you can see the same request answered by the real service and by your mock,
+ * one toggle apart.
+ *
+ * It is a shared public sandbox, so it is sometimes slow and sometimes broken.
+ * Which is, in fairness, the argument for mocking it.
+ */
+export const PETSTORE_BASE = 'https://petstore3.swagger.io/api/v3';
+
+export const PETSTORE_OPENAPI_URL = `${PETSTORE_BASE}/openapi.json`;
+
+export const PETSTORE_DOCS_URL = 'https://petstore3.swagger.io';
+
+export const PETSTORE_ENDPOINTS = {
+  FIND_BY_STATUS: `${PETSTORE_BASE}/pet/findByStatus`,
+} as const;

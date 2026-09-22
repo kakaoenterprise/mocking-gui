@@ -34,6 +34,11 @@ export const manualHandlers: HandlerConfigOption[] = [
         body: createErrorBody('INTERNAL', 'Unexpected error.', 'Retry in a moment.'),
       },
       {
+        name: 'Session expired (401)',
+        status: 401,
+        body: createErrorBody('TOKEN_EXPIRED', 'Your session has expired.', 'Sign in again.'),
+      },
+      {
         name: 'Rate limited (429)',
         status: 429,
         headers: {

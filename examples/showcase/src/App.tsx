@@ -6,6 +6,10 @@ import {
   BASE_ENDPOINT,
   ENDPOINTS,
   GRAPHQL_ENDPOINT,
+  PETSTORE_BASE,
+  PETSTORE_DOCS_URL,
+  PETSTORE_ENDPOINTS,
+  PETSTORE_OPENAPI_URL,
   SWAGGER_SERVER_URL,
 } from '@/mocks/constants/endpoints';
 
@@ -183,24 +187,66 @@ function App() {
           </Section>
 
           <Section
-            step="05 · openapi import"
-            title="Handlers nobody wrote by hand"
-            lede="The Swagger tab in the panel imported an OpenAPI document at startup and generated these handlers from its response schemas. They start inactive — switch one on in the panel first, then send."
+            step="05 · a real api, a real spec"
+            title="Everything above is fiction. This part is not."
+            lede="Every other endpoint on this page targets an origin that does not exist. These two point at Swagger's live Petstore sandbox — a real public API with a real OpenAPI document, fetched at startup. Which makes this the one place you can see the same request answered by a real service and by your mock, one toggle apart."
           >
             <ApiCard
+              title="Find pets by status"
+              badge="manual · real url"
+              method="GET"
+              url={PETSTORE_ENDPOINTS.FIND_BY_STATUS}
+              hint="Send it now and you get the same three pets every time, in a couple of milliseconds. Then switch this handler off in the panel and send again: the request leaves your browser and comes back with a few thousand pets that strangers created in the public sandbox, named things like “pet-64444”, after most of a second on the wire."
+            >
+              <p className="text-xs leading-relaxed text-stone-500">
+                Same URL, same code, one toggle apart. The real answer is honest and useless for
+                building a UI — you cannot write a screenshot test against it, and you certainly
+                cannot ask it for an empty list. That is the whole argument for mocking, and it is
+                the only place on this page where you can watch it happen.
+              </p>
+            </ApiCard>
+
+            <ApiCard
+              title="Get pet by id"
+              badge="swagger · live doc"
+              method="GET"
+              url={`${PETSTORE_BASE}/pet/10`}
+              hint="This handler was generated from the live OpenAPI document, not written by hand. It starts inactive, so right now the request reaches the real Petstore — which answers “Pet not found” for almost every id, because its data is wiped constantly. Activate it in the Swagger tab and you get a pet every time."
+            />
+
+            <ApiCard
               title="List projects"
-              badge="swagger"
+              badge="swagger · self-hosted doc"
               method="GET"
               url={`${SWAGGER_SERVER_URL}/projects`}
-              hint="Generated from the 200 and 403 schemas in the document. Until you activate it in the Swagger tab, this request passes through and fails."
+              hint="A second OpenAPI source, served from this app's own files. It exists so this section still demonstrates something if the public sandbox is down — a failing source is isolated and the rest keeps working."
             />
-            <ApiCard
-              title="Get project"
-              badge="swagger"
-              method="GET"
-              url={`${SWAGGER_SERVER_URL}/projects/prj_31`}
-              hint="The document declares this path as {project-id}. Hyphenated OpenAPI params are normalized on import — that is why this matches at all."
-            />
+
+            <p className="text-xs leading-relaxed text-stone-500">
+              One detail worth noticing: the first card&apos;s endpoint also exists in the Petstore
+              document, so the hand-written handler and the generated one merged into a single row
+              in the panel. It carries both sets of responses, and the type selector switches
+              between them.
+            </p>
+
+            <p className="text-xs leading-relaxed text-stone-500">
+              Both documents are listed in the panel&apos;s <strong>Swagger</strong> tab with their
+              load status and handler count.{' '}
+              <a
+                href={PETSTORE_OPENAPI_URL}
+                className="underline decoration-stone-300 hover:text-stone-800"
+              >
+                The Petstore spec
+              </a>{' '}
+              and{' '}
+              <a
+                href={PETSTORE_DOCS_URL}
+                className="underline decoration-stone-300 hover:text-stone-800"
+              >
+                its docs
+              </a>{' '}
+              are public, so you can check what was generated against the source.
+            </p>
           </Section>
 
           <Section
@@ -228,7 +274,7 @@ function App() {
           <Section
             step="07 · scenarios"
             title="Send a bug report that reproduces itself"
-            lede="A scenario is a named snapshot of several handlers at once. Copy a code below, open Scenarios → Import in the panel, paste it, and activate — the whole app moves to that state. This is what a teammate would paste into a ticket."
+            lede="A scenario is a named snapshot of several handlers at once. Below are five situations a frontend engineer actually has to build for, each one awkward or impossible to produce against a healthy backend. Copy a code, open Scenarios → Import in the panel, paste it, and activate — the whole app moves to that state. This is what a teammate would paste into a ticket."
           >
             <ScenarioPresets />
             <p className="text-xs leading-relaxed text-stone-500">

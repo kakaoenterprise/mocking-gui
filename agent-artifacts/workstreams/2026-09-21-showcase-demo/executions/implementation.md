@@ -172,3 +172,83 @@ bundle. Roughly twenty minutes went into chasing a "seeding does not work"
 symptom that was this. Restart the preview server after every rebuild;
 `pkill -f "vitepress preview"` does not match it (`vitepress.js preview`) —
 kill the PID holding port 4173.
+
+---
+
+# Addendum — real API, real spec, concrete scenarios (2026-09-22)
+
+Before publishing, two things were upgraded: the OpenAPI import now points at a
+**live public API**, and the scenario presets were rewritten as **five specific
+jobs** rather than generic combinations.
+
+## Live API
+
+`https://petstore3.swagger.io/api/v3` — Swagger's own Petstore sandbox. Verified
+before adopting it:
+
+| Check                                    | Result                                                          |
+| :--------------------------------------- | :-------------------------------------------------------------- |
+| `GET /openapi.json`                      | `200`, `Access-Control-Allow-Origin: *`                         |
+| `GET /pet/findByStatus?status=available` | `200`, real data, CORS open                                     |
+| `GET /store/inventory`                   | **`500`** — broken on the public sandbox                        |
+| `GET /pet/{id}`                          | **`404 "Pet not found"`**, plain text, for essentially every id |
+
+The instability is the point rather than a problem — but it must not be able to
+break the page, so two mitigations are in place:
+
+1. **A second, self-hosted OpenAPI source is kept.** `useSwaggerHandlerSetup`
+   catches per source, marks it `status: 'error'` with a message and continues,
+   so a Petstore outage costs one greyed-out source in the Swagger tab and
+   nothing else. Passing two sources also exercises the array form of `swagger`.
+2. **The live endpoint is mocked by default.** A hand-written handler
+   (`handlers/liveApi.ts`) sits on the real URL with deterministic variants, so
+   the first thing a visitor sees always works. Reaching the real API is an
+   explicit opt-in: switch that handler off.
+
+That opt-in is the most valuable demonstration on the page, and the numbers are
+worth keeping in the copy:
+
+|               | Mock on                | Mock off (real API)        |
+| :------------ | :--------------------- | :------------------------- |
+| Pets returned | 3                      | **3,515**                  |
+| Response time | ~2 ms                  | **777 ms**                 |
+| Names         | Mochi, Pepper, Biscuit | `pet-64444`, `pet-7634`, … |
+
+Same URL, same application code, one toggle apart.
+
+### An emergent behaviour worth knowing
+
+The hand-written `GET /pet/findByStatus` handler and the one generated from the
+Petstore document **merge into a single row** in the panel —
+`mergeHandlersWithSwagger` keys on method + url. The merged handler carries both
+`responseVariants` and `swaggerResponseVariants`, and the type selector switches
+between them. Handler counts confirm it: 12 hand-written + 19 Petstore + 2
+self-hosted = 33, but the panel shows **32**. This was not designed for; it is
+good behaviour, and the page now points it out.
+
+The panel also groups rows by origin, showing `11 / 13 Active` and
+`1 / 19 Active` as separate group headers.
+
+## Scenarios
+
+The three generic presets became five, each tied to a job a frontend engineer
+actually has, and each carrying `useWhen` and an `expect` list so the page states
+what will visibly change:
+
+| Scenario                          | Use when                                  |
+| :-------------------------------- | :---------------------------------------- |
+| Payment provider is down          | Designing the retry path and error banner |
+| Brand new account                 | Building first-run and empty states       |
+| Session expired mid-session       | Working on the re-authentication flow     |
+| Everything on a slow connection   | Reviewing skeletons and spinners          |
+| Seat limit reached, card declined | Building the upgrade prompt               |
+
+A `Session expired (401)` variant was added to the user handler so the third one
+could pin two endpoints to 401 while a third stays healthy — the partial-failure
+case that breaks redirect logic.
+
+"Brand new account" includes the handler on the **real Petstore URL**, which was
+the interesting thing to verify: a scenario can pin a live-API endpoint to an
+empty array. It does, and that combination — every list empty at once, including
+one backed by a real service — is exactly what a staging environment will never
+give you.

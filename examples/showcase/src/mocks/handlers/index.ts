@@ -1,4 +1,5 @@
 import { dynamicHandlers } from './dynamic';
+import { liveApiHandlers } from './liveApi';
 import { manualHandlers } from './manual';
 import { networkHandlers } from './network';
 import { rawBodyHandlers } from './rawBody';
@@ -10,4 +11,5 @@ export const handlers: HandlerConfigOption[] = [
   ...dynamicHandlers,
   ...networkHandlers,
   ...rawBodyHandlers,
+  ...liveApiHandlers,
 ];

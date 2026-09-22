@@ -45,3 +45,13 @@ export const createUploadReceipt = (): FormData => {
   formData.append('bytes', '2048');
   return formData;
 };
+
+/** Shaped like the real Petstore `Pet` schema, so mock and live data compare cleanly. */
+export const createPet = (id: number, name: string, status: 'available' | 'pending' | 'sold') => ({
+  id,
+  name,
+  status,
+  photoUrls: [`https://example.test/pets/${name.toLowerCase().replace(/\s+/g, '-')}.jpg`],
+  tags: [{ id: 1, name: status }],
+  category: { id: 1, name: 'Dogs' },
+});

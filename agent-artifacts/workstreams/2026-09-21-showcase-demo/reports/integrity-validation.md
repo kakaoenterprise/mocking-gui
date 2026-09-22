@@ -110,3 +110,56 @@ page are meant to advertise.
 - **SSR cookie sync.** Needs a Node host; GitHub Pages cannot serve it. Covered by the `next-app-router` example, and the demo footer says so.
 - **Cross-browser.** Chromium only. Safari and Firefox Service Worker behaviour on a sub-path should be checked before the link is promoted publicly.
 - **Scenario export to file and JSON upload import.** Only the code path was exercised.
+
+---
+
+# Addendum — live API and rewritten scenarios (2026-09-22)
+
+Quality gate re-run after the changes: **lint 4/4 (0 errors) · 46 tests passed ·
+build 5/5**.
+
+## Live OpenAPI source
+
+| Check                                                 | Result                                                                                             |
+| :---------------------------------------------------- | :------------------------------------------------------------------------------------------------- |
+| Petstore document loaded in-browser at startup        | **19 handlers generated**                                                                          |
+| Handler keys                                          | `get.https://petstore3.swagger.io/api/v3/pet/findByStatus`, `…/pet/:petId`, `…/store/inventory`, … |
+| Panel grouping                                        | two origin groups — `11 / 13 Active` and `1 / 19 Active`                                           |
+| Merge with the hand-written handler on the same route | confirmed: 12 + 19 + 2 = 33 defined, **32** rows                                                   |
+
+## Mock ↔ real API toggle
+
+| Phase                     | Status | Count                                | Time       |
+| :------------------------ | :----- | :----------------------------------- | :--------- |
+| Handler on (mocked)       | `200`  | 3 pets — Mochi, Pepper, Biscuit      | ~2 ms      |
+| Handler off (passthrough) | `200`  | **3,515 pets** from the live sandbox | **777 ms** |
+| Handler on again          | `200`  | back to the same 3                   | ~2 ms      |
+
+This is the first verification in this workstream where `passthrough()` reaches
+a real service rather than failing at DNS.
+
+## Scenario driving a live-URL handler
+
+Imported the "Brand new account" code (788 chars) through the panel and applied it:
+
+| Endpoint                          | After applying                         |
+| :-------------------------------- | :------------------------------------- |
+| `activeScenarioId`                | `demo-first-run`                       |
+| Notifications                     | `items: 0`, `unreadCount: 0`           |
+| Export CSV                        | 1 line — header row only               |
+| **Find pets (real Petstore URL)** | **`[]`** — variant pinned to `No pets` |
+| User                              | `role: viewer`                         |
+
+Four handlers moved from one paste, including the one on a real API.
+
+## UI fix found by looking at the screenshot
+
+Scenario card headers used `flex-wrap`, so a long `Use when:` line pushed the
+copy button onto its own row on 2 of 5 cards. Changed to a non-wrapping header
+with `flex-1 min-w-0` on the text block; the button now stays right-aligned on
+every card. Verified visually after the fix.
+
+## Still not verified
+
+- Cross-browser (Chromium only).
+- Behaviour when the Petstore sandbox is fully down — the error path is read from source (`useSwaggerHandlerSetup` catches per source) but was not reproduced, since the sandbox was up throughout.
