@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { ScenarioTopology } from '@/components/ScenarioTopology';
 import { SCENARIO_PRESETS, encodeScenario } from '@/mocks/scenarios';
 
 export function ScenarioPresets() {
@@ -53,6 +54,8 @@ export function ScenarioPresets() {
                   ))}
                 </ul>
               </div>
+
+              <ScenarioTopology scenario={scenario} />
 
               <p className="font-mono text-[10px] text-stone-400">
                 {Object.keys(scenario.configs).length} handlers · {code.length} chars

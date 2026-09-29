@@ -7,7 +7,7 @@ import { ENDPOINTS, PETSTORE_ENDPOINTS } from '@/mocks/constants/endpoints';
  * only `HandlerConfigOption`, `MockingConfig` and `SwaggerSourceConfigOption`
  * are exported. These local types are a stand-in until they are public.
  */
-type StoredHandlerVariants = {
+export type StoredHandlerVariants = {
   active: boolean;
   type: 'Manual' | 'Auto' | 'Swagger' | null;
   variant?: string;
