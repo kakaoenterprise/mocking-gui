@@ -25,7 +25,7 @@ A strategic consulting skill for identifying the technical constraints of a targ
 - **Q2. Is MSW currently being used manually?** -> **Action**: Write a migration roadmap to convert existing handlers to the Mocking GUI 4-Layer pattern (`HandlerConfigOption`).
 - **Q3. Does the project have a base path?** -> **Action**: Specify `${BASE_PATH}/mockServiceWorker.js` in `worker.serviceWorker.url` and verify that the MSW init path matches.
 - **Q4. Want to use Swagger documentation?** -> **Action**: Add `configUrl` (OpenAPI JSON URL) to the `swagger[]` array. Proactively verify CORS allowance.
-- **Q5. Are there GraphQL/WebSocket handlers?** -> **Action**: Outside the current library support scope. Manage separately with a dedicated MSW configuration.
+- **Q5. Are there GraphQL/WebSocket handlers?** -> **Action**: Pass them unchanged via `MockingConfig.onDemandHandlers` (escape hatch, browser-only, not shown in the panel). All `http.*` handlers still go to `mocks` as `HandlerConfigOption` — never to `onDemandHandlers`.
 
 ## 4. Engineering Constraints & Mandates
 

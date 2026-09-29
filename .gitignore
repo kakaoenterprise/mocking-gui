@@ -46,3 +46,6 @@ yalc-packages
 
 # generated demo bundle (built into the docs site by `pnpm demo:build`)
 docs/public/demo/
+
+# test coverage
+coverage/

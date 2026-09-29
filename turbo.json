@@ -7,10 +7,12 @@
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": ["^lint"],
+      "outputs": []
     },
     "lint:fix": {
-      "dependsOn": ["^lint:fix"]
+      "dependsOn": ["^lint:fix"],
+      "outputs": []
     },
     "dev": {
       "dependsOn": ["^build"],
@@ -23,6 +25,12 @@
     "msw:init": {
       "cache": false,
       "persistent": true
+    },
+    "test": {
+      "outputs": []
+    },
+    "test:coverage": {
+      "outputs": ["coverage/**"]
     }
   }
 }

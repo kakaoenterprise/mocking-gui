@@ -9,8 +9,18 @@ export type MockingConfig = {
   swagger?: SwaggerSourceConfigOption[];
   worker?: WorkerStartOptions;
   /**
-   * Additional MSW RequestHandlers that are not managed by Mocking GUI.
-   * Useful for GraphQL or WebSocket handlers.
+   * Escape hatch: native MSW RequestHandlers passed straight to the worker,
+   * registered AFTER the handlers converted from `mocks` / `swagger`.
+   *
+   * Use only for MSW features Mocking GUI does not provide (`graphql.*`, `ws.*`).
+   * These handlers never enter the handler store, so they are NOT shown in the
+   * GUI panel, NOT toggleable, NOT part of scenarios, and NOT applied by
+   * `setupMockingServer` (browser worker only).
+   *
+   * Every `http.*` handler belongs in `mocks` as a `HandlerConfigOption`.
+   * Do not register the same endpoint here and in `mocks`: the `mocks` entry
+   * answers first (or returns `passthrough()` when disabled), so the copy here
+   * is unreachable.
    */
   onDemandHandlers?: RequestHandler[];
 };

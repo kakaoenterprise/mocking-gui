@@ -15,5 +15,12 @@ export default defineConfig({
   },
   test: {
     globals: true,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json-summary', 'json', 'html'],
+      reportOnFailure: true,
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/**/*.test.{ts,tsx}', 'src/**/*.d.ts', 'src/components/ui/**'],
+    },
   },
 });

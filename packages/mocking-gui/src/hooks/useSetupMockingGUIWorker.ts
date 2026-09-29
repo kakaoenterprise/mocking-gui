@@ -69,6 +69,22 @@ const useSetupMockingGUIWorker = (config: MockingConfig = {}) => {
   }, []);
 
   useEffect(() => {
+    const handleVisibilityChange = () => {
+      // Backgrounded tabs can have their Service Worker idle-terminated by the
+      // browser, which silently drops mocking until a reload. Re-run the
+      // MOCK_ACTIVATE handshake as soon as the tab is visible again instead.
+      if (document.visibilityState === 'visible') {
+        MockingGUIWorkerManager.reactivate();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!isSwaggerReady) return;
 
     // Initialize with merged Handler State when Swagger handler is ready

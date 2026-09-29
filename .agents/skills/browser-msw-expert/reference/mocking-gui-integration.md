@@ -45,4 +45,5 @@ HandlerConfigOption (mocks[])
 - Use MSW's `HttpResponse` factory instead of directly creating `new Response()`.
 - Service Worker configuration is managed in `worker.serviceWorker.url` (path to `mockServiceWorker.js`).
 - Cross-origin requests require an absolute URL including domain. Same-origin requests may use relative paths.
-- GraphQL/WebSocket is outside the current support scope (HTTP only).
+- GraphQL/WebSocket handlers are not GUI-managed; pass them via `onDemandHandlers`. They are appended after the converted `mocks` in `worker.resetHandlers(...)`, never appear in the panel, and are not applied by `setupMockingServer`.
+- Never register the same endpoint in `mocks` and `onDemandHandlers`: `mocks` wins, and a disabled `mocks` entry returns `passthrough()` (MSW stops there), so the duplicate is unreachable.

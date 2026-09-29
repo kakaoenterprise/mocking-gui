@@ -210,4 +210,64 @@ describe('convertSwaggerToHandlers - Swagger Response Variants', () => {
       expect(variants[0].body).toBeUndefined();
     });
   });
+
+  describe('Handler Ordering (static-before-dynamic)', () => {
+    const urlsOf = (handlers: ReturnType<typeof convertSwaggerToHandlers>) =>
+      handlers.map(h => h.url);
+
+    it('registers static paths before dynamic ones even when the spec declares dynamic first', () => {
+      const swagger: OpenAPI = {
+        openapi: '3.0.0',
+        paths: {
+          '/v1/kubeflows/{id}': { get: { responses: { '200': { description: 'ok' } } } },
+          '/v1/kubeflows/health': { get: { responses: { '200': { description: 'ok' } } } },
+        },
+      };
+
+      // Static '/health' must come before dynamic '/:id', otherwise MSW's
+      // first-match-wins would let ':id' shadow the static route.
+      expect(urlsOf(convertSwaggerToHandlers(baseUrl, swagger))).toEqual([
+        `${baseUrl}/v1/kubeflows/health`,
+        `${baseUrl}/v1/kubeflows/:id`,
+      ]);
+    });
+
+    it('keeps original spec order within the static group and within the dynamic group (stable)', () => {
+      const swagger: OpenAPI = {
+        openapi: '3.0.0',
+        paths: {
+          '/v1/b/{id}': { get: { responses: { '200': { description: 'ok' } } } }, // dynamic
+          '/v1/a': { get: { responses: { '200': { description: 'ok' } } } }, // static
+          '/v1/a/{id}': { get: { responses: { '200': { description: 'ok' } } } }, // dynamic
+          '/v1/b': { get: { responses: { '200': { description: 'ok' } } } }, // static
+        },
+      };
+
+      // statics first in their original relative order (a, b),
+      // then dynamics in their original relative order (b/:id, a/:id).
+      expect(urlsOf(convertSwaggerToHandlers(baseUrl, swagger))).toEqual([
+        `${baseUrl}/v1/a`,
+        `${baseUrl}/v1/b`,
+        `${baseUrl}/v1/b/:id`,
+        `${baseUrl}/v1/a/:id`,
+      ]);
+    });
+
+    it('does not misclassify a static path when baseUrl contains a scheme/port colon', () => {
+      const portBaseUrl = 'https://api.example.com:8443';
+      const swagger: OpenAPI = {
+        openapi: '3.0.0',
+        paths: {
+          '/v1/{id}': { get: { responses: { '200': { description: 'ok' } } } },
+          '/v1/status': { get: { responses: { '200': { description: 'ok' } } } },
+        },
+      };
+
+      // The ':8443' in baseUrl must not make the static '/v1/status' look dynamic.
+      expect(urlsOf(convertSwaggerToHandlers(portBaseUrl, swagger))).toEqual([
+        `${portBaseUrl}/v1/status`,
+        `${portBaseUrl}/v1/:id`,
+      ]);
+    });
+  });
 });

@@ -8,6 +8,7 @@ type WorkerStartOptions = Parameters<SetupWorker['start']>[0];
 let worker: SetupWorker | null = null;
 let startPromise: Promise<void> | null = null;
 let isHandlerStarted = false;
+let lastStartOptions: WorkerStartOptions | undefined;
 
 const getWorker = (): SetupWorker => {
   if (!worker) {
@@ -23,6 +24,7 @@ const start = async (options: WorkerStartOptions): Promise<void> => {
   }
 
   const currentWorker = getWorker();
+  lastStartOptions = options;
   console.log('[MockingGUI] Starting MSW Worker...');
 
   startPromise = currentWorker.start(options).then(() => {
@@ -41,6 +43,22 @@ const stop = (): void => {
   }
 };
 
+/**
+ * Re-sends the MOCK_ACTIVATE handshake on the existing worker.
+ * The browser can idle-terminate the Service Worker (e.g. while its tab is
+ * backgrounded), which wipes its in-memory active-client registry even
+ * though this page's worker/registration is still alive. A plain reload
+ * recovers because `start()` runs the handshake again; this lets a
+ * visibility-change callback trigger the same recovery without reloading.
+ */
+const reactivate = (): void => {
+  if (!worker || !isHandlerStarted) return;
+
+  worker.start(lastStartOptions).catch(err => {
+    console.error('[MockingGUI] Failed to reactivate MSW worker:', err);
+  });
+};
+
 const MockingGUIWorkerManager = {
   get isStarted() {
     return isHandlerStarted;
@@ -48,6 +66,7 @@ const MockingGUIWorkerManager = {
   getWorker,
   start,
   stop,
+  reactivate,
 };
 
 export default MockingGUIWorkerManager;

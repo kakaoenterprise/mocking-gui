@@ -20,12 +20,26 @@ interface MockingConfig {
   worker?: WorkerStartOptions;
 
   /**
-   * Additional MSW RequestHandlers that are not managed by Mocking GUI.
-   * Useful for GraphQL or WebSocket handlers.
+   * Escape hatch: native MSW RequestHandlers passed straight to the worker.
+   * Only for MSW features Mocking GUI does not provide (graphql.*, ws.*).
+   * NOT shown in the panel, NOT toggleable, NOT applied on the server.
+   * Every http.* handler belongs in `mocks`, not here.
    */
   onDemandHandlers?: RequestHandler[];
 }
 ```
+
+#### `onDemandHandlers` vs `mocks`
+
+| Behavior                              | `mocks` | `onDemandHandlers` |
+| ------------------------------------- | ------- | ------------------ |
+| Visible / controllable in the panel   | ✅      | ❌                 |
+| Included in Scenarios                 | ✅      | ❌                 |
+| Applied by `setupMockingServer` (SSR) | ✅      | ❌                 |
+| Registration order in MSW             | first   | after `mocks`      |
+| `graphql.*` / `ws.*` support          | ❌      | ✅                 |
+
+Because `mocks` is registered first and a disabled `mocks` entry returns `passthrough()`, registering the same endpoint in both places makes the `onDemandHandlers` copy unreachable. See the [Handler Guide](./handler-guide#escape-hatch-ondemandhandlers) for the migration rule.
 
 ### `SwaggerSourceConfigOption`
 

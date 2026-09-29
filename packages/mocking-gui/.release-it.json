@@ -1,0 +1,33 @@
+{
+  "$schema": "./node_modules/release-it/schema/release-it.json",
+  "git": {
+    "requireBranch": "main",
+    "requireCleanWorkingDir": true,
+    "requireUpstream": false,
+    "commitMessage": "chore(release): bump @kakaocloud/mocking-gui to ${version}",
+    "tagName": "v${version}",
+    "tagAnnotation": "Release v${version}",
+    "push": true
+  },
+  "npm": {
+    "publish": true,
+    "publishArgs": ["--provenance", "--access", "public"]
+  },
+  "github": {
+    "release": true,
+    "releaseName": "v${version}",
+    "autoGenerate": false
+  },
+  "plugins": {
+    "@release-it/conventional-changelog": {
+      "preset": {
+        "name": "conventionalcommits"
+      },
+      "infile": "CHANGELOG.md",
+      "ignoreRecommendedBump": false
+    }
+  },
+  "hooks": {
+    "before:init": ["pnpm lint", "pnpm test", "pnpm build"]
+  }
+}

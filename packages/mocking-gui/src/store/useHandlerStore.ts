@@ -9,6 +9,7 @@ import {
   buildAppliedConfigs,
   computeActiveScenarioId,
   isDuplicateScenarioConfig,
+  selectImportableScenarios,
 } from '@utils/scenario';
 
 import type {
@@ -164,22 +165,19 @@ export const useHandlerStore = create<HandlerStoreState & HandlerStoreAction>()(
           ),
         }));
       },
-      importScenario: (scenario: Scenario) => {
-        const { scenarios } = get();
-        const isExist = scenarios.some(({ id }) => id === scenario.id);
-        const isDuplicate = scenarios.some(({ name }) => name.trim() === scenario.name.trim());
+      importScenario: (scenario: Scenario) => get().importScenarios([scenario]) > 0,
+      importScenarios: (incoming: Scenario[]) => {
+        const importable = selectImportableScenarios(incoming, get().scenarios || []);
+        if (importable.length === 0) return 0;
 
-        if (isExist || isDuplicate) return false;
-        set(state => {
-          const newScenario = {
-            ...scenario,
-            createdAt: new Date().toISOString(),
-          };
-          return {
-            scenarios: [newScenario, ...(state.scenarios || [])],
-          };
-        });
-        return true;
+        const createdAt = new Date().toISOString();
+        set(state => ({
+          scenarios: [
+            ...importable.map(scenario => ({ ...scenario, createdAt })),
+            ...(state.scenarios || []),
+          ],
+        }));
+        return importable.length;
       },
       addToDraft: (handlerKey: string, variant?: StoredHandlerVariants) => {
         const { handlerConfigs } = get();
