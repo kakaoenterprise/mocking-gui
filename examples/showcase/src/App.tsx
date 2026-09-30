@@ -1,6 +1,7 @@
 import { ApiCard } from '@/components/ApiCard';
 import { Hero } from '@/components/Hero';
 import { ScenarioPresets } from '@/components/ScenarioPresets';
+import { ScopeWarning } from '@/components/ScopeWarning';
 import { Section } from '@/components/Section';
 import {
   BASE_ENDPOINT,
@@ -29,6 +30,7 @@ function App() {
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
       <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+        <ScopeWarning />
         <Hero />
 
         <div className="mt-10 space-y-12">

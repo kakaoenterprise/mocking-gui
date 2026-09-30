@@ -89,9 +89,15 @@ export function ApiCard({
           <div className="rounded-md bg-rose-50 px-3 py-2 text-xs text-rose-700 ring-1 ring-rose-200">
             <p className="font-semibold">Request failed: {error}</p>
             <p className="mt-1 text-rose-600">
-              This is what a disabled handler looks like — MSW passed the request through to the
-              real network, and this demo origin does not exist. In your app it would reach your
-              actual server.
+              The request reached the network instead of a mock. Usually that means this handler is
+              switched off in the panel, which is the intended way to see
+              <code className="mx-1 rounded bg-rose-100 px-1">passthrough()</code>
+              behave — the demo origin does not exist, so it fails here, while in your app it would
+              reach your real server.
+            </p>
+            <p className="mt-1 text-rose-600">
+              If every request fails at once, the page is probably not under the Service
+              Worker&apos;s control. The banner at the top of the page says so when that happens.
             </p>
           </div>
         )}

@@ -163,3 +163,65 @@ every card. Verified visually after the fix.
 
 - Cross-browser (Chromium only).
 - Behaviour when the Petstore sandbox is fully down — the error path is read from source (`useSwaggerHandlerSetup` catches per source) but was not reproduced, since the sandbox was up throughout.
+
+---
+
+# Addendum — Service Worker scope bug (2026-09-30)
+
+Reported from the preview build: every request failed with `Failed to fetch`
+while the page, the panel and the console all looked healthy.
+
+## Root cause
+
+The page had been opened at `/mocking-gui/demo` — **without the trailing
+slash**. The worker registers at `<base>mockServiceWorker.js`, so its scope is
+`/mocking-gui/demo/`, and scope is a plain path-prefix match. `/mocking-gui/demo`
+is one character outside it, so the client was never claimed.
+
+Evidence, same build, two URLs:
+
+| URL                  | registration                          | `navigator.serviceWorker.controller` | request           |
+| :------------------- | :------------------------------------ | :----------------------------------- | :---------------- |
+| `/mocking-gui/demo`  | activated, scope `/mocking-gui/demo/` | **null**                             | `Failed to fetch` |
+| `/mocking-gui/demo/` | activated, same scope                 | controlled                           | `200`             |
+
+MSW diagnosed it correctly in the console —
+`[MSW] Cannot intercept requests on this page because it's outside of the
+worker's scope` — and then logged `Mocking enabled` anyway. `MockingGUIBoundary`
+also resolved `isMockingReady` and lifted the loading screen, so nothing in the
+UI reflected that no interception would happen.
+
+`vitepress preview` (sirv) serves the slash-less path with `200` and no redirect,
+which is what allowed landing there. **Production is not affected**: GitHub Pages
+answers the same shape of request with a `301` to the slashed form, verified
+against the live docs site (`/mocking-gui/guide` → `301` →
+`/mocking-gui/guide/`).
+
+## Fixes
+
+1. **Canonicalise the path before anything loads** (`src/main.tsx`). If the
+   pathname equals the base without its trailing slash, `location.replace()` to
+   the base. This removes the dependency on the host issuing the redirect.
+2. **Corrected misleading copy** (`ApiCard.tsx`). The failure message asserted
+   "this is what a disabled handler looks like", which is what sent the reader
+   looking in the wrong place. It now states what happened, gives the likely
+   cause without claiming it, and points at the banner.
+3. **Surfaced the condition** (`ScopeWarning.tsx`). `controller === null` after
+   startup now renders a banner above the page instead of leaving the only
+   honest signal in the console.
+
+## Verification
+
+| Case                     | Expected                           | Result                                                                                                                                               |
+| :----------------------- | :--------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Open `/mocking-gui/demo` | redirected, controlled, mocks work | lands on `/mocking-gui/demo/`, controlled, manual/rawBody/live-url all `200`                                                                         |
+| Healthy page             | no banner                          | `bannerShown: false`                                                                                                                                 |
+| **Forced out-of-scope**  | banner appears                     | worker moved to `<base>sw/` by a temporary source change and rebuild: scope `…/demo/sw/`, `controller: null`, **`bannerShown: true`**, request `ERR` |
+
+The out-of-scope case was reproduced properly rather than assumed. A first
+attempt patched the built bundle in place, which the browser ignored because the
+filename — and therefore the cache key — had not changed; rebuilding from source
+produced new hashes and a valid test. The temporary change was reverted and
+`git diff` confirmed clean before committing.
+
+Gate after the fix: lint 4/4 (0 errors) · 46 tests · build 5/5.
