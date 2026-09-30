@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 
+import { readMockState } from '@/lib/mockState';
+
 /**
  * Where the visitor is in the import flow, read from the panel's own state.
  *
@@ -12,33 +14,21 @@ import { useEffect, useState } from 'react';
  * panel writes it in this document, which does not raise a `storage` event, so
  * it is polled rather than subscribed to.
  */
-const STORAGE_KEY = 'MOCKING_GUI_HANDLERS';
 const POLL_MS = 600;
-
-type PersistedScenario = { id: string };
 
 export type ScenarioProgress = {
   importedIds: Set<string>;
   activeId: string | null;
 };
 
-const EMPTY: ScenarioProgress = { importedIds: new Set(), activeId: null };
-
 const read = (): ScenarioProgress => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return EMPTY;
+  const state = readMockState();
+  const scenarios = Array.isArray(state.scenarios) ? state.scenarios : [];
 
-    const state = JSON.parse(raw)?.state;
-    const scenarios: PersistedScenario[] = Array.isArray(state?.scenarios) ? state.scenarios : [];
-
-    return {
-      importedIds: new Set(scenarios.map(scenario => scenario.id)),
-      activeId: typeof state?.activeScenarioId === 'string' ? state.activeScenarioId : null,
-    };
-  } catch {
-    return EMPTY;
-  }
+  return {
+    importedIds: new Set(scenarios.map(scenario => scenario.id)),
+    activeId: typeof state.activeScenarioId === 'string' ? state.activeScenarioId : null,
+  };
 };
 
 const same = (a: ScenarioProgress, b: ScenarioProgress) =>

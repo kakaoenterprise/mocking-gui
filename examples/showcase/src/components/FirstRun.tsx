@@ -1,6 +1,17 @@
 import { useState } from 'react';
 
+import { isHandlerActive } from '@/lib/mockState';
 import { HTTPBIN_ENDPOINTS } from '@/mocks/constants/endpoints';
+
+/** The panel addresses handlers as `${method}.${url}`. */
+const ECHO_HANDLER_KEY = `get.${HTTPBIN_ENDPOINTS.ECHO}`;
+
+/** `origin` is only present when the real service answers; a fixture may omit it. */
+const readOrigin = (body: unknown): string | null => {
+  if (typeof body !== 'object' || body === null) return null;
+  const origin = (body as Record<string, unknown>).origin;
+  return typeof origin === 'string' ? origin : null;
+};
 
 type Call = {
   at: string;
@@ -24,6 +35,14 @@ type Call = {
  * own address appear, then be replaced by a number you chose, settles what
  * happened more convincingly than any wording.
  */
+const safeParse = (raw: string): unknown => {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
 export function FirstRun() {
   const [calls, setCalls] = useState<Call[]>([]);
   const [loading, setLoading] = useState(false);
@@ -34,10 +53,26 @@ export function FirstRun() {
     setError(null);
     const startedAt = performance.now();
 
+    /**
+     * Whether this call was mocked is a fact about the panel, not about the
+     * payload. Reading it here — before the request goes out — also survives the
+     * handler being switched between variants or types mid-session, and the case
+     * that used to crash this component: a Swagger variant whose document
+     * declared no schema answers `null`, which no amount of body inspection can
+     * tell apart from a real response.
+     */
+    const mocked = isHandlerActive(ECHO_HANDLER_KEY);
+
     try {
       const response = await fetch(HTTPBIN_ENDPOINTS.ECHO);
-      const json = await response.json();
-      const body = JSON.stringify(json, null, 2);
+      const raw = await response.text();
+
+      let body = raw;
+      try {
+        body = JSON.stringify(JSON.parse(raw), null, 2);
+      } catch {
+        // Not JSON — show it as it arrived rather than failing the whole call.
+      }
 
       setCalls(previous =>
         [
@@ -45,10 +80,9 @@ export function FirstRun() {
             at: new Date().toLocaleTimeString(),
             status: response.status,
             durationMs: Math.round(performance.now() - startedAt),
-            origin: typeof json.origin === 'string' ? json.origin : null,
-            // The fixture says so itself; the page does not have to guess.
-            mocked: typeof json.note === 'string',
-            body,
+            origin: readOrigin(raw ? safeParse(raw) : null),
+            mocked,
+            body: body || '(empty body)',
           },
           ...previous,
         ].slice(0, 2),
