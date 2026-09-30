@@ -8,9 +8,6 @@ export const API_ORIGIN = 'https://api.mocking-gui.demo';
 
 export const BASE_ENDPOINT = `${API_ORIGIN}/v1`;
 
-/** Swagger-imported handlers are pinned to a separate version prefix. */
-export const SWAGGER_SERVER_URL = `${API_ORIGIN}/v2`;
-
 export const ENDPOINTS = {
   USER: `${BASE_ENDPOINT}/users/:userId`,
   SEARCH: `${BASE_ENDPOINT}/search`,
@@ -24,9 +21,6 @@ export const ENDPOINTS = {
   UPLOAD: `${BASE_ENDPOINT}/reports/upload`,
   ARCHIVE_BIN: `${BASE_ENDPOINT}/reports/archive.bin`,
 } as const;
-
-/** Served from this app's own `public/` folder, so the demo works offline. */
-export const OPENAPI_DOC_URL = `${import.meta.env.BASE_URL}openapi.json`;
 
 export const GRAPHQL_ENDPOINT = `${API_ORIGIN}/graphql`;
 
@@ -68,7 +62,10 @@ export const PETSTORE_ENDPOINTS = {
  */
 export const HTTPBIN_BASE = 'https://httpbin.org';
 
+export const HTTPBIN_OPENAPI_URL = `${HTTPBIN_BASE}/spec.json`;
+
 export const HTTPBIN_ENDPOINTS = {
   ECHO: `${HTTPBIN_BASE}/get`,
-  RATE_LIMITED: `${HTTPBIN_BASE}/status/429`,
+  /** Served by the handler the spec generates for `/status/{codes}`. */
+  STATUS: `${HTTPBIN_BASE}/status/503`,
 } as const;

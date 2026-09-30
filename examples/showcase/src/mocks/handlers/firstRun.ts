@@ -3,16 +3,21 @@ import { HTTPBIN_ENDPOINTS } from '@/mocks/constants/endpoints';
 import type { HandlerConfigOption } from '@kakaocloud/mocking-gui';
 
 /**
- * The two handlers the opening section drives.
+ * The handler the opening section drives.
  *
  * Both sit on a real, reachable API, which is the whole point: switching them
  * off does not produce an error, it produces the genuine response. A visitor
  * can therefore see the same URL answered by the internet and by their own
  * fixture without ever meeting a failure state.
  *
- * `firstRunHandlerKeys` is exported because these two must start **off** — the
- * first thing the page shows should be the real network, so that turning the
- * mock on is the moment something changes.
+ * `firstRunHandlerKeys` is exported because it must start **off** — the first
+ * thing the page shows should be the real network, so that turning the mock on
+ * is the moment something changes.
+ *
+ * A second hand-written handler for `/status/429` used to sit here. The httpbin
+ * document generates one for `/status/{codes}` with five variants named after
+ * the status classes, which covers the same ground without two handlers
+ * competing for the same request.
  */
 export const firstRunHandlers: HandlerConfigOption[] = [
   {
@@ -36,25 +41,6 @@ export const firstRunHandlers: HandlerConfigOption[] = [
         name: 'Empty result',
         status: 200,
         body: { args: {}, headers: {}, origin: null, url: 'https://httpbin.org/get' },
-      },
-    ],
-  },
-  {
-    name: 'Rate limited (real API)',
-    description: 'The real service returns a genuine 429 here — compare it with the mocked one.',
-    url: HTTPBIN_ENDPOINTS.RATE_LIMITED,
-    method: 'get',
-    responseVariants: [
-      {
-        name: 'Mocked 429 with headers',
-        status: 429,
-        headers: { 'Retry-After': '30', 'X-RateLimit-Limit': '100', 'X-RateLimit-Remaining': '0' },
-        body: { error: { code: 'RATE_LIMITED', message: 'Slow down. Retry in 30 seconds.' } },
-      },
-      {
-        name: 'Recovered (200)',
-        status: 200,
-        body: { ok: true, note: 'The same URL, answering as if the limit had cleared.' },
       },
     ],
   },

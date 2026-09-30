@@ -12,10 +12,10 @@ import {
   ENDPOINTS,
   GRAPHQL_ENDPOINT,
   PETSTORE_BASE,
-  PETSTORE_DOCS_URL,
   PETSTORE_ENDPOINTS,
+  HTTPBIN_ENDPOINTS,
+  HTTPBIN_OPENAPI_URL,
   PETSTORE_OPENAPI_URL,
-  SWAGGER_SERVER_URL,
 } from '@/mocks/constants/endpoints';
 
 const HEADER_PRESETS: { label: string; value: Record<string, string> }[] = [
@@ -233,37 +233,41 @@ function App() {
             />
 
             <ApiCard
-              title="List projects"
-              badge="swagger · self-hosted doc"
+              title="Return any status you ask for"
+              badge="swagger · live doc"
               method="GET"
-              url={`${SWAGGER_SERVER_URL}/projects`}
-              hint="A second OpenAPI source, served from this app's own files. It exists so this section still demonstrates something if the public sandbox is down — a failing source is isolated and the rest keeps working."
+              url={HTTPBIN_ENDPOINTS.STATUS}
+              hint="Generated from httpbin's document, which declares no response schemas at all — so this handler answers with the right status and an empty body. Its variants are named after the status classes the spec documents, so activating it in the Swagger tab lets you move this endpoint between 2xx, 4xx and 5xx. Leave it off and the real service returns a genuine 503."
             />
 
             <p className="text-xs leading-relaxed text-stone-500">
               One detail worth noticing: the first card&apos;s endpoint also exists in the Petstore
               document, so the hand-written handler and the generated one merged into a single row
-              in the panel. It carries both sets of responses, and the type selector switches
-              between them.
+              in the panel, carrying both sets of responses with the type selector switching between
+              them. The opening section&apos;s <code>/get</code> handler merges with httpbin&apos;s
+              document the same way.
             </p>
 
             <p className="text-xs leading-relaxed text-stone-500">
-              Both documents are listed in the panel&apos;s <strong>Swagger</strong> tab with their
-              load status and handler count.{' '}
+              The two documents are unalike on purpose.{' '}
               <a
                 href={PETSTORE_OPENAPI_URL}
                 className="underline decoration-stone-300 hover:text-stone-800"
               >
-                The Petstore spec
+                Petstore&apos;s
               </a>{' '}
-              and{' '}
+              carries response schemas, so its handlers arrive with sampled bodies;{' '}
               <a
-                href={PETSTORE_DOCS_URL}
+                href={HTTPBIN_OPENAPI_URL}
                 className="underline decoration-stone-300 hover:text-stone-800"
               >
-                its docs
+                httpbin&apos;s
               </a>{' '}
-              are public, so you can check what was generated against the source.
+              carries none across 73 operations, so its handlers arrive with status codes and
+              nothing else. An import is only ever as good as the document behind it, and showing
+              both is more honest than showing only the one that flatters the feature. Each is
+              listed in the panel&apos;s <strong>Swagger</strong> tab with its load status and
+              handler count.
             </p>
           </Section>
 
