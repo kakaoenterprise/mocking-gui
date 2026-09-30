@@ -18,7 +18,7 @@ export function ScenarioPresets() {
 
   return (
     <div className="grid gap-3">
-      {SCENARIO_PRESETS.map(({ scenario, useWhen, expect }) => {
+      {SCENARIO_PRESETS.map(({ scenario, useWhen }) => {
         const code = encodeScenario(scenario);
 
         return (
@@ -44,20 +44,10 @@ export function ScenarioPresets() {
             <div className="space-y-3 px-4 py-3">
               <p className="text-xs leading-relaxed text-stone-600">{scenario.description}</p>
 
-              <div>
-                <p className="mb-1.5 font-mono text-[10px] tracking-widest text-stone-400 uppercase">
-                  after applying
-                </p>
-                <ul className="space-y-1">
-                  {expect.map(line => (
-                    <li key={line} className="flex gap-2 font-mono text-[11px] text-stone-600">
-                      <span className="text-stone-300">→</span>
-                      {line}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
+              {/* The scenario's own calls, drawn from its configs and coloured by
+                  what actually came back. A hand-written list of expected
+                  responses used to sit here; it could only ever assert what this
+                  shows. */}
               <ScenarioTopology scenario={scenario} />
 
               <p className="font-mono text-[10px] text-stone-400">

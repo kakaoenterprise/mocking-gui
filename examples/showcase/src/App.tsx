@@ -291,10 +291,23 @@ function App() {
 
           <Section
             step="08 · scenarios"
-            title="Send a bug report that reproduces itself"
-            lede="A scenario is a named snapshot of several handlers at once. Below are five situations a frontend engineer actually has to build for, each one awkward or impossible to produce against a healthy backend. Copy a code, open Scenarios → Import in the panel, paste it, and activate — the whole app moves to that state. This is what a teammate would paste into a ticket."
+            title="A scenario is a shape, not a setting"
+            lede="Everything so far moved one endpoint at a time. A scenario moves a set of them together — and that set has a shape: which calls it covers, which it leaves alone, and what each one answers. Each card below draws its own shape. The drawing is not an illustration of the scenario; it is built from the scenario, and testing it colours the lines with what actually came back."
           >
+            <p className="text-xs leading-relaxed text-stone-500">
+              Start here: this is the whole system these scenarios draw from — every call, run at
+              once. Each scenario below touches only part of it.
+            </p>
+
             <SystemBoard />
+
+            <p className="text-xs leading-relaxed text-stone-500">
+              Now pick one. Press{' '}
+              <strong className="font-semibold text-stone-700">Test this scenario</strong> on a card
+              to colour its shape as things stand, then copy its code, import it in the panel,
+              activate it, and test again — the whole shape repaints at once. That is the difference
+              between changing a setting and moving a system into a state.
+            </p>
             <ScenarioPresets />
             <ScenarioCreateGuide />
             <p className="text-xs leading-relaxed text-stone-500">

@@ -25,10 +25,14 @@ export type Scenario = {
 /** Extra copy for the demo page; not part of the shared scenario payload. */
 export type ScenarioPreset = {
   scenario: Scenario;
-  /** The job this scenario exists to support. */
+  /**
+   * The job this scenario exists to support.
+   *
+   * There is deliberately no hand-written list of expected responses here:
+   * `resolveExpectation` derives them from the scenario's own configs, and
+   * ScenarioTopology draws them. A prose copy would only drift.
+   */
   useWhen: string;
-  /** What visibly changes once it is applied. */
-  expect: string[];
 };
 
 /** Handler keys are `${method}.${url}` — the same rule the library uses. */
@@ -60,11 +64,6 @@ const CREATED_AT = '2026-09-22T00:00:00.000Z';
 export const SCENARIO_PRESETS: ScenarioPreset[] = [
   {
     useWhen: 'Designing the retry path and the error banner for a failed payment.',
-    expect: [
-      'POST /v1/checkout → 503 with Retry-After: 120',
-      'Dashboard stats → 206, p95 latency flagged as degraded',
-      'Notifications → three unread alerts',
-    ],
     scenario: {
       id: 'demo-payment-outage',
       name: 'Payment provider is down',
@@ -81,12 +80,6 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
   {
     useWhen:
       'Building first-run and empty states — the hardest thing to reproduce on a real backend.',
-    expect: [
-      'Notifications → empty list, unreadCount 0',
-      'Export CSV → header row only',
-      'Find pets → empty array',
-      'User → Viewer, the lowest permission set',
-    ],
     scenario: {
       id: 'demo-first-run',
       name: 'Brand new account',
@@ -103,11 +96,6 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
   },
   {
     useWhen: 'Working on the re-authentication flow — what happens when a token dies mid-session.',
-    expect: [
-      'GET /v1/users/:userId → 401 TOKEN_EXPIRED',
-      'Notifications → 401 as well, so the whole shell has to react',
-      'Dashboard stats → still 200, so partial failure is visible',
-    ],
     scenario: {
       id: 'demo-session-expired',
       name: 'Session expired mid-session',
@@ -123,11 +111,6 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
   },
   {
     useWhen: 'Reviewing skeletons and spinners — you need the loading state to hold still.',
-    expect: [
-      'Dashboard stats → 2.5s',
-      'Search → 2.5s, so pagination spinners are visible',
-      'Find pets → 4s, long enough to catch a layout shift',
-    ],
     scenario: {
       id: 'demo-slow-network',
       name: 'Everything on a slow connection',
@@ -143,11 +126,6 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
   },
   {
     useWhen: 'Building the upgrade prompt that appears when an org runs out of seats.',
-    expect: [
-      'User → Admin with seatsUsed 10 of 10',
-      'POST /v1/checkout → 402 CARD_DECLINED',
-      'Notifications → unread, so the banner competes for attention',
-    ],
     scenario: {
       id: 'demo-seat-limit',
       name: 'Seat limit reached, card declined',
