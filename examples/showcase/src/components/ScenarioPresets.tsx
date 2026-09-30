@@ -1,10 +1,12 @@
 import { useState } from 'react';
 
 import { ScenarioTopology } from '@/components/ScenarioTopology';
+import { useScenarioProgress } from '@/hooks/useScenarioProgress';
 import { SCENARIO_PRESETS, encodeScenario } from '@/mocks/scenarios';
 
 export function ScenarioPresets() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const { importedIds, activeId } = useScenarioProgress();
 
   const handleCopy = async (id: string, code: string) => {
     try {
@@ -28,7 +30,13 @@ export function ScenarioPresets() {
           >
             <header className="flex items-baseline justify-between gap-4 border-b border-stone-100 px-4 py-3">
               <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-semibold text-stone-900">{scenario.name}</h3>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-sm font-semibold text-stone-900">{scenario.name}</h3>
+                  <StatusChip
+                    imported={importedIds.has(scenario.id)}
+                    active={activeId === scenario.id}
+                  />
+                </div>
                 <p className="mt-0.5 text-xs text-stone-500">
                   Use when: <span className="text-stone-700">{useWhen}</span>
                 </p>
@@ -37,7 +45,9 @@ export function ScenarioPresets() {
                 onClick={() => handleCopy(scenario.id, code)}
                 className="shrink-0 rounded-md border border-stone-300 px-2.5 py-1.5 text-xs font-medium text-stone-700 transition hover:border-stone-900 hover:text-stone-900"
               >
-                {copiedId === scenario.id ? 'Copied — now paste it' : 'Copy scenario code'}
+                {copiedId === scenario.id
+                  ? 'Copied — panel → Scenario → Import'
+                  : 'Copy scenario code'}
               </button>
             </header>
 
@@ -58,5 +68,30 @@ export function ScenarioPresets() {
         );
       })}
     </div>
+  );
+}
+
+/** Where this particular scenario stands, so the cards are not all identical. */
+function StatusChip({ imported, active }: { imported: boolean; active: boolean }) {
+  if (active) {
+    return (
+      <span className="rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
+        active
+      </span>
+    );
+  }
+
+  if (imported) {
+    return (
+      <span className="rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold text-sky-700 ring-1 ring-sky-200">
+        imported · not applied
+      </span>
+    );
+  }
+
+  return (
+    <span className="rounded px-1.5 py-0.5 font-mono text-[10px] text-stone-500 ring-1 ring-stone-200">
+      not imported
+    </span>
   );
 }

@@ -4,6 +4,7 @@ import { Hero } from '@/components/Hero';
 import { PanelTour } from '@/components/PanelTour';
 import { ScenarioCreateGuide } from '@/components/ScenarioCreateGuide';
 import { ScenarioPresets } from '@/components/ScenarioPresets';
+import { ScenarioWalkthrough } from '@/components/ScenarioWalkthrough';
 import { ScopeWarning } from '@/components/ScopeWarning';
 import { Section } from '@/components/Section';
 import { SystemBoard } from '@/components/SystemBoard';
@@ -308,6 +309,8 @@ function App() {
               activate it, and test again — the whole shape repaints at once. That is the difference
               between changing a setting and moving a system into a state.
             </p>
+            <ScenarioWalkthrough />
+
             <ScenarioPresets />
             <ScenarioCreateGuide />
             <p className="text-xs leading-relaxed text-stone-500">
