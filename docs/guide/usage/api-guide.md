@@ -62,6 +62,8 @@ interface SwaggerSourceConfigOption {
 
 Sets up the mocking server in Node.js environments (e.g., Next.js SSR, RSC).
 
+It returns `null` with a console warning only when called in a browser (a DOM is present and no Node.js runtime is detected); Node-based test environments such as `jsdom` and `happy-dom` create the server as usual.
+
 ```typescript
 import { setupMockingServer } from '@kakaocloud/mocking-gui/server';
 

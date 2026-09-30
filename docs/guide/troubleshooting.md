@@ -96,6 +96,24 @@ The `configUrl` must be the direct URL to the OpenAPI spec JSON, not the Swagger
 
 ---
 
+## `setupMockingServer` returns null in jsdom tests
+
+### Symptom
+
+In a Node-based test environment with a DOM shim (vitest/jest `jsdom` or `happy-dom`), `setupMockingServer` returned `null` and no requests were mocked, with nothing logged.
+
+### Cause & Solution
+
+Older versions skipped whenever `window` was defined, and jsdom/happy-dom define `window` even though they run on Node. **This is fixed in this version**: the server is now skipped only when a DOM exists _and_ no Node.js runtime is detected, so jsdom and happy-dom create the server normally.
+
+If you still see this warning in a server-side or Node-based test environment, it is a bug — please report it on the [issue tracker](https://github.com/kakaoenterprise/mocking-gui/issues):
+
+```
+[MockingGUI Server] setupMockingServer was skipped: a browser (DOM) runtime without Node.js was detected.
+```
+
+---
+
 ## Service Worker fails to install in a local HTTPS environment
 
 ### Symptom
