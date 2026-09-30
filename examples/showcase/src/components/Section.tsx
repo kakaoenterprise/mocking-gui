@@ -15,7 +15,9 @@ export function Section({ step, title, lede, children }: SectionProps) {
         <h2 className="mt-1 text-lg font-semibold text-stone-900">{title}</h2>
         <p className="mt-1 max-w-2xl text-sm leading-relaxed text-stone-600">{lede}</p>
       </div>
-      <div className="grid gap-3">{children}</div>
+      {/* `[&>*]:min-w-0` lets children shrink; grid items default to
+          `min-width: auto`, which long URLs turn into a sideways scroll. */}
+      <div className="grid gap-3 [&>*]:min-w-0">{children}</div>
     </section>
   );
 }

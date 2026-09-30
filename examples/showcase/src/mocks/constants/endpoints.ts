@@ -51,3 +51,24 @@ export const PETSTORE_DOCS_URL = 'https://petstore3.swagger.io';
 export const PETSTORE_ENDPOINTS = {
   FIND_BY_STATUS: `${PETSTORE_BASE}/pet/findByStatus`,
 } as const;
+
+/**
+ * httpbin — a real, no-auth, CORS-open API that answers deterministically.
+ *
+ * Chosen for the opening demonstration because `/get` echoes the caller back:
+ * the real response contains the visitor's own IP and User-Agent, which settles
+ * the question of whether a request actually left the browser far better than
+ * any wording could. `/status/{code}` returns whatever code is asked for, so
+ * the real service can stand next to a mocked error instead of a DNS failure.
+ *
+ * Its OpenAPI document is deliberately NOT imported: it declares 73 operations
+ * with zero response schemas, so it would generate 73 empty handlers and make
+ * the import feature look broken. Petstore is the spec source (73% schema
+ * coverage); httpbin is the live endpoint.
+ */
+export const HTTPBIN_BASE = 'https://httpbin.org';
+
+export const HTTPBIN_ENDPOINTS = {
+  ECHO: `${HTTPBIN_BASE}/get`,
+  RATE_LIMITED: `${HTTPBIN_BASE}/status/429`,
+} as const;

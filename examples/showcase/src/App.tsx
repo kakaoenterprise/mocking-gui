@@ -1,8 +1,12 @@
 import { ApiCard } from '@/components/ApiCard';
+import { FirstRun } from '@/components/FirstRun';
 import { Hero } from '@/components/Hero';
+import { PanelTour } from '@/components/PanelTour';
+import { ScenarioCreateGuide } from '@/components/ScenarioCreateGuide';
 import { ScenarioPresets } from '@/components/ScenarioPresets';
 import { ScopeWarning } from '@/components/ScopeWarning';
 import { Section } from '@/components/Section';
+import { SystemBoard } from '@/components/SystemBoard';
 import {
   BASE_ENDPOINT,
   ENDPOINTS,
@@ -33,9 +37,21 @@ function App() {
         <ScopeWarning />
         <Hero />
 
-        <div className="mt-10 space-y-12">
+        <div className="mt-2">
+          <FirstRun />
+        </div>
+
+        <div className="mt-12 space-y-12">
           <Section
-            step="01 · response variants"
+            step="01 · the panel"
+            title="What you are looking at"
+            lede="The panel is the round button at the bottom-left corner. It reads the handlers your app declared and lets you drive them; nothing in it is specific to this demo."
+          >
+            <PanelTour />
+          </Section>
+
+          <Section
+            step="02 · response variants"
             title="One endpoint, every state it can return"
             lede="Open the API tab in the panel, find “Get user”, and switch its variant. Then send the request again. No rebuild, no code edit — the 404 and the 500 are one click away."
           >
@@ -57,7 +73,7 @@ function App() {
           </Section>
 
           <Section
-            step="02 · dynamic handlers"
+            step="03 · dynamic handlers"
             title="When the request has to shape the response"
             lede="These are Auto handlers: a function receives the request and returns the response, so there is no variant to pick. Change the inputs below and the same handler answers differently."
           >
@@ -126,7 +142,7 @@ function App() {
           </Section>
 
           <Section
-            step="03 · states you cannot reach"
+            step="04 · states you cannot reach"
             title="The empty list, the slow response, the expired token"
             lede="Set a delay on a handler in the panel (the control row next to the variant) and send again — the loading state finally holds still long enough to look at."
           >
@@ -147,7 +163,7 @@ function App() {
           </Section>
 
           <Section
-            step="04 · not everything is json"
+            step="05 · not everything is json"
             title="CSV, HTML, XML, form data and raw bytes"
             lede="rawBody sets the body and its content type directly. The viewer below reads each response according to what it claims to be, so you can tell them apart."
           >
@@ -189,7 +205,7 @@ function App() {
           </Section>
 
           <Section
-            step="05 · a real api, a real spec"
+            step="06 · a real api, a real spec"
             title="Everything above is fiction. This part is not."
             lede="Every other endpoint on this page targets an origin that does not exist. These two point at Swagger's live Petstore sandbox — a real public API with a real OpenAPI document, fetched at startup. Which makes this the one place you can see the same request answered by a real service and by your mock, one toggle apart."
           >
@@ -252,7 +268,7 @@ function App() {
           </Section>
 
           <Section
-            step="06 · outside the panel"
+            step="07 · outside the panel"
             title="Handlers the panel does not manage"
             lede="onDemandHandlers are passed straight to MSW. They have no toggle and no variants, which is exactly what you want for GraphQL or always-on infrastructure routes."
           >
@@ -274,11 +290,13 @@ function App() {
           </Section>
 
           <Section
-            step="07 · scenarios"
+            step="08 · scenarios"
             title="Send a bug report that reproduces itself"
             lede="A scenario is a named snapshot of several handlers at once. Below are five situations a frontend engineer actually has to build for, each one awkward or impossible to produce against a healthy backend. Copy a code, open Scenarios → Import in the panel, paste it, and activate — the whole app moves to that state. This is what a teammate would paste into a ticket."
           >
+            <SystemBoard />
             <ScenarioPresets />
+            <ScenarioCreateGuide />
             <p className="text-xs leading-relaxed text-stone-500">
               You can also build your own: switch a few handlers into an interesting combination,
               save it as a scenario, and use the panel&apos;s share button to get a code just like
@@ -286,6 +304,23 @@ function App() {
             </p>
           </Section>
         </div>
+
+        <section className="mt-12 rounded-lg border border-stone-200 bg-white p-4">
+          <p className="font-mono text-[11px] tracking-widest text-stone-400 uppercase">
+            How this page is wired
+          </p>
+          <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-stone-600">
+            Everything you just used comes from one component wrapped around the app, reading the
+            handlers you already wrote.
+          </p>
+          <pre className="mt-3 overflow-x-auto font-mono text-[11px] leading-relaxed text-stone-700">
+            {`import { MockingGUIBoundary } from '@kakaocloud/mocking-gui/browser';
+
+<MockingGUIBoundary config={{ mocks: handlers }}>
+  <App />
+</MockingGUIBoundary>`}
+          </pre>
+        </section>
 
         <footer className="mt-14 border-t border-stone-200 pt-5 text-xs leading-relaxed text-stone-500">
           <p>

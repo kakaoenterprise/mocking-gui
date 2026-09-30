@@ -22,7 +22,10 @@ export function ScenarioPresets() {
         const code = encodeScenario(scenario);
 
         return (
-          <article key={scenario.id} className="rounded-lg border border-stone-200 bg-white">
+          <article
+            key={scenario.id}
+            className="min-w-0 rounded-lg border border-stone-200 bg-white"
+          >
             <header className="flex items-baseline justify-between gap-4 border-b border-stone-100 px-4 py-3">
               <div className="min-w-0 flex-1">
                 <h3 className="text-sm font-semibold text-stone-900">{scenario.name}</h3>
