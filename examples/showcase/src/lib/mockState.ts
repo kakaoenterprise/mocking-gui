@@ -24,15 +24,3 @@ export const readMockState = (): PersistedState => {
     return {};
   }
 };
-
-/**
- * Whether a handler is currently switched on.
- *
- * Used to label a response as mocked instead of inspecting its body. Body
- * sniffing looked fine until a handler answered with a Swagger variant whose
- * document declared no schema: the body was `null`, the check dereferenced it,
- * and the page went blank. What answered a request is a property of the panel,
- * not of the payload.
- */
-export const isHandlerActive = (handlerKey: string): boolean =>
-  readMockState().handlerConfigs?.[handlerKey]?.active === true;

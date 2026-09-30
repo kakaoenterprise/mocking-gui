@@ -1,5 +1,4 @@
 import { handlers } from '@/mocks/handlers';
-import { firstRunHandlerKeys } from '@/mocks/handlers/firstRun';
 
 /**
  * Turns the demo's handlers on for a first-time visitor.
@@ -32,22 +31,8 @@ export const seedDefaultMockState = () => {
 
     const handlerConfigs: Record<string, SeededConfig> = {};
 
-    const startsOff = new Set<string>(firstRunHandlerKeys);
-
     for (const handler of handlers) {
       const handlerKey = `${handler.method}.${handler.url}`;
-
-      // The opening section is built around switching these ON, so they must
-      // start OFF — the first request a visitor sends should be a real one.
-      if (startsOff.has(handlerKey)) {
-        handlerConfigs[handlerKey] = {
-          active: false,
-          type: 'Manual',
-          variant: handler.responseVariants?.[0]?.name,
-          delay: 0,
-        };
-        continue;
-      }
 
       if (handler.responseVariantsFn) {
         handlerConfigs[handlerKey] = { active: true, type: 'Auto', delay: 0 };

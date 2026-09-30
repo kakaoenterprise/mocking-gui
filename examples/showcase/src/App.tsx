@@ -13,8 +13,6 @@ import {
   GRAPHQL_ENDPOINT,
   PETSTORE_BASE,
   PETSTORE_ENDPOINTS,
-  HTTPBIN_ENDPOINTS,
-  HTTPBIN_OPENAPI_URL,
   PETSTORE_OPENAPI_URL,
 } from '@/mocks/constants/endpoints';
 
@@ -27,7 +25,6 @@ const HEADER_PRESETS: { label: string; value: Record<string, string> }[] = [
   },
 ];
 
-const USER_URL = `${BASE_ENDPOINT}/users/u_1024`;
 const SESSION_URL = `${BASE_ENDPOINT}/session/tenant_42`;
 
 function App() {
@@ -51,17 +48,10 @@ function App() {
           </Section>
 
           <Section
-            step="02 · response variants"
-            title="One endpoint, every state it can return"
-            lede="Open the API tab in the panel, find “Get user”, and switch its variant. Then send the request again. No rebuild, no code edit — the 404 and the 500 are one click away."
+            step="02 · the same thing, as payloads"
+            title="If you would rather see the response itself"
+            lede="The screen above is what a variant is for. The rest of this page works at the level below it — the actual bodies, statuses and headers — because some of what the panel does only shows up there. Nothing here is required reading; skip to the panel tour if the screen already made the point."
           >
-            <ApiCard
-              title="Get user"
-              badge="manual"
-              method="GET"
-              url={USER_URL}
-              hint="Seven variants, including a 429 that carries Retry-After and X-RateLimit-* headers — open “headers” below to check they arrived."
-            />
             <ApiCard
               title="Checkout"
               badge="manual"
@@ -232,42 +222,26 @@ function App() {
               hint="This handler was generated from the live OpenAPI document, not written by hand. It starts inactive, so right now the request reaches the real Petstore — which answers “Pet not found” for almost every id, because its data is wiped constantly. Activate it in the Swagger tab and you get a pet every time."
             />
 
-            <ApiCard
-              title="Return any status you ask for"
-              badge="swagger · live doc"
-              method="GET"
-              url={HTTPBIN_ENDPOINTS.STATUS}
-              hint="Generated from httpbin's document, which declares no response schemas at all — so this handler answers with the right status and an empty body. Its variants are named after the status classes the spec documents, so activating it in the Swagger tab lets you move this endpoint between 2xx, 4xx and 5xx. Leave it off and the real service returns a genuine 503."
-            />
-
             <p className="text-xs leading-relaxed text-stone-500">
               One detail worth noticing: the first card&apos;s endpoint also exists in the Petstore
               document, so the hand-written handler and the generated one merged into a single row
-              in the panel, carrying both sets of responses with the type selector switching between
-              them. The opening section&apos;s <code>/get</code> handler merges with httpbin&apos;s
-              document the same way.
+              in the panel. It carries both sets of responses, and the type selector switches
+              between them.
             </p>
 
             <p className="text-xs leading-relaxed text-stone-500">
-              The two documents are unalike on purpose.{' '}
+              How much a generated handler is worth depends entirely on the document behind it.
+              Petstore declares response schemas, so its handlers arrive with sampled bodies; a
+              document that declares none would still produce handlers, but with status codes and
+              nothing else.{' '}
               <a
                 href={PETSTORE_OPENAPI_URL}
                 className="underline decoration-stone-300 hover:text-stone-800"
               >
-                Petstore&apos;s
+                The spec
               </a>{' '}
-              carries response schemas, so its handlers arrive with sampled bodies;{' '}
-              <a
-                href={HTTPBIN_OPENAPI_URL}
-                className="underline decoration-stone-300 hover:text-stone-800"
-              >
-                httpbin&apos;s
-              </a>{' '}
-              carries none across 73 operations, so its handlers arrive with status codes and
-              nothing else. An import is only ever as good as the document behind it, and showing
-              both is more honest than showing only the one that flatters the feature. Each is
-              listed in the panel&apos;s <strong>Swagger</strong> tab with its load status and
-              handler count.
+              is public, so you can check what was generated against its source. It is listed in the
+              panel&apos;s <strong>Swagger</strong> tab with its load status and handler count.
             </p>
           </Section>
 
