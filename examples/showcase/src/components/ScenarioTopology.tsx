@@ -61,6 +61,23 @@ const isMatch = (expectation: Expectation, result: ProbeResult): boolean => {
   return expectation.status === result.status;
 };
 
+/**
+ * What the scenario declares for this call, in words.
+ *
+ * `resolveExpectation` already computed this to decide whether a result
+ * matches, but nothing showed it — so before you pressed test, a node said only
+ * which path it was, and the scenario's actual content stayed invisible. Now the
+ * untested column reads as the scenario's intent and the tested one as evidence
+ * against it.
+ */
+const expectationLabel = (expectation: Expectation): string => {
+  const delay = expectation.delayMs ? ` · ${expectation.delayMs}ms delay` : '';
+
+  if (expectation.kind === 'auto') return `computed per request${delay}`;
+  if (expectation.kind === 'manual') return `${expectation.status} ${expectation.variant}${delay}`;
+  return `${expectation.variant ?? 'unknown'}${delay}`;
+};
+
 type Node = {
   probe: Probe;
   expectation: Expectation;
@@ -202,7 +219,7 @@ export function ScenarioTopology({ scenario }: ScenarioTopologyProps) {
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="truncate font-mono text-[11px] text-stone-700">
+                  <span className="min-w-0 truncate font-mono text-[11px] text-stone-700">
                     <span className="font-semibold">{node.probe.method}</span> {node.probe.path}
                   </span>
                   {result.state === 'done' && (
@@ -219,6 +236,20 @@ export function ScenarioTopology({ scenario }: ScenarioTopologyProps) {
                     <span className="shrink-0 font-mono text-[11px] text-stone-300">—</span>
                   )}
                 </div>
+
+                {/* Edges colour by response class, which can read as "all fine"
+                    while the badge says otherwise — so a node that answered
+                    something the scenario did not ask for says so here. */}
+                <p
+                  className={`mt-0.5 truncate font-mono text-[10px] ${
+                    result.state === 'done' && !isMatch(node.expectation, result)
+                      ? 'text-amber-600'
+                      : 'text-stone-400'
+                  }`}
+                >
+                  scenario says: {expectationLabel(node.expectation)}
+                  {result.state === 'done' && !isMatch(node.expectation, result) && ' — not yet'}
+                </p>
 
                 {result.state === 'done' && <ResponseBody result={result} />}
               </article>

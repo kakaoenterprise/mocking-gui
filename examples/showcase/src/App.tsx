@@ -7,7 +7,6 @@ import { ScenarioPresets } from '@/components/ScenarioPresets';
 import { ScenarioWalkthrough } from '@/components/ScenarioWalkthrough';
 import { ScopeWarning } from '@/components/ScopeWarning';
 import { Section } from '@/components/Section';
-import { SystemBoard } from '@/components/SystemBoard';
 import {
   BASE_ENDPOINT,
   ENDPOINTS,
@@ -293,31 +292,11 @@ function App() {
           <Section
             step="08 · scenarios"
             title="A scenario is a shape, not a setting"
-            lede="Everything so far moved one endpoint at a time. A scenario moves a set of them together — and that set has a shape: which calls it covers, which it leaves alone, and what each one answers. Each card below draws its own shape. The drawing is not an illustration of the scenario; it is built from the scenario, and testing it colours the lines with what actually came back."
+            lede="Everything so far moved one endpoint at a time. A scenario moves a set of them together, and that set has a shape — which calls it covers and what each one answers. Every card below draws its own shape, built from the scenario itself rather than described alongside it."
           >
-            <p className="text-xs leading-relaxed text-stone-500">
-              Start here: this is the whole system these scenarios draw from — every call, run at
-              once. Each scenario below touches only part of it.
-            </p>
-
-            <SystemBoard />
-
-            <p className="text-xs leading-relaxed text-stone-500">
-              Now pick one. Press{' '}
-              <strong className="font-semibold text-stone-700">Test this scenario</strong> on a card
-              to colour its shape as things stand, then copy its code, import it in the panel,
-              activate it, and test again — the whole shape repaints at once. That is the difference
-              between changing a setting and moving a system into a state.
-            </p>
             <ScenarioWalkthrough />
-
             <ScenarioPresets />
             <ScenarioCreateGuide />
-            <p className="text-xs leading-relaxed text-stone-500">
-              You can also build your own: switch a few handlers into an interesting combination,
-              save it as a scenario, and use the panel&apos;s share button to get a code just like
-              these.
-            </p>
           </Section>
         </div>
 

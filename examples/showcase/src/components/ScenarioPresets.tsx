@@ -59,10 +59,6 @@ export function ScenarioPresets() {
                   responses used to sit here; it could only ever assert what this
                   shows. */}
               <ScenarioTopology scenario={scenario} />
-
-              <p className="font-mono text-[10px] text-stone-400">
-                {Object.keys(scenario.configs).length} handlers · {code.length} chars
-              </p>
             </div>
           </article>
         );
