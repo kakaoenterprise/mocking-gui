@@ -9,7 +9,7 @@ const STEPS = [
   {
     n: 1,
     title: 'Pick the handlers',
-    body: 'In the API tab, set two or three handlers to an interesting combination, then press ＋ on each row. They collect in the draft bar at the bottom of the panel.',
+    body: 'In the API tab, set two or three handlers to an interesting combination, then press the circled plus on each row — the same control the legend above describes. They collect in the draft bar at the bottom of the panel.',
   },
   {
     n: 2,
