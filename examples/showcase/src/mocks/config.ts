@@ -5,14 +5,21 @@ import {
 } from '@/mocks/constants/endpoints';
 import { handlers } from '@/mocks/handlers';
 import { onDemandHandlers } from '@/mocks/onDemand';
+import { SCENARIO_PRESETS, encodeScenario } from '@/mocks/scenarios';
 
 import type { MockingConfig } from '@kakaocloud/mocking-gui';
 
 export const mockConfig: MockingConfig = {
   mocks: handlers,
-  scenarios: [
-    'eyJpZCI6ImRlbW8tZmlyc3QtcnVuIiwibmFtZSI6IkJyYW5kIG5ldyBhY2NvdW50IiwiZGVzY3JpcHRpb24iOiJOb3RoaW5nIGhhcyBoYXBwZW5lZCBpbiB0aGlzIGFjY291bnQgeWV0LiBFdmVyeSBsaXN0IGlzIGVtcHR5IGF0IHRoZSBzYW1lIHRpbWUsIHdoaWNoIGlzIHRoZSBzdGF0ZSB0aGF0IG5ldmVyIHN1cnZpdmVzIG9uIGEgc2hhcmVkIHN0YWdpbmcgZW52aXJvbm1lbnQuIiwiY3JlYXRlZEF0IjoiMjAyNi0wOS0yMlQwMDowMDowMC4wMDBaIiwiY29uZmlncyI6eyJnZXQuaHR0cHM6Ly9hcGkubW9ja2luZy1ndWkuZGVtby92MS91c2Vycy86dXNlcklkIjp7ImFjdGl2ZSI6dHJ1ZSwidHlwZSI6Ik1hbnVhbCIsInZhcmlhbnQiOiJWaWV3ZXIifSwiZ2V0Lmh0dHBzOi8vYXBpLm1vY2tpbmctZ3VpLmRlbW8vdjEvbm90aWZpY2F0aW9ucyI6eyJhY3RpdmUiOnRydWUsInR5cGUiOiJNYW51YWwiLCJ2YXJpYW50IjoiRW1wdHkifSwiZ2V0Lmh0dHBzOi8vYXBpLm1vY2tpbmctZ3VpLmRlbW8vdjEvcmVwb3J0cy9leHBvcnQuY3N2Ijp7ImFjdGl2ZSI6dHJ1ZSwidHlwZSI6Ik1hbnVhbCIsInZhcmlhbnQiOiJFbXB0eSBleHBvcnQifSwiZ2V0Lmh0dHBzOi8vcGV0c3RvcmUzLnN3YWdnZXIuaW8vYXBpL3YzL3BldC9maW5kQnlTdGF0dXMiOnsiYWN0aXZlIjp0cnVlLCJ0eXBlIjoiTWFudWFsIiwidmFyaWFudCI6Ik5vIHBldHMifX19',
-  ],
+  /**
+   * Every preset on the page, seeded into the panel at startup.
+   *
+   * Encoded from `SCENARIO_PRESETS` rather than pasted as literals so the codes
+   * cannot drift from the definitions the page itself renders. The library
+   * merges them by id and leaves anything already saved alone, so a returning
+   * visitor keeps their own edits and whichever scenario they had active.
+   */
+  scenarios: SCENARIO_PRESETS.map(({ scenario }) => encodeScenario(scenario)),
 
   /**
    * A live document, not a fixture.
