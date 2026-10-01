@@ -1,29 +1,55 @@
+import { useState } from 'react';
+
 import { ScenarioTopology } from '@/components/ScenarioTopology';
 import { useScenarioProgress } from '@/hooks/useScenarioProgress';
-import { SCENARIO_PRESETS } from '@/mocks/scenarios';
+import { SCENARIO_PRESETS, encodeScenario } from '@/mocks/scenarios';
 
 export function ScenarioPresets() {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const { importedIds, activeId } = useScenarioProgress();
+
+  const handleCopy = async (id: string, code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedId(id);
+      window.setTimeout(() => setCopiedId(null), 2500);
+    } catch {
+      setCopiedId(null);
+    }
+  };
 
   return (
     <div className="grid gap-3">
       {SCENARIO_PRESETS.map(({ scenario, useWhen }) => {
+        const code = encodeScenario(scenario);
+
         return (
           <article
             key={scenario.id}
             className="min-w-0 rounded-lg border border-stone-200 bg-white"
           >
-            <header className="min-w-0 border-b border-stone-100 px-4 py-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-sm font-semibold text-stone-900">{scenario.name}</h3>
-                <StatusChip
-                  imported={importedIds.has(scenario.id)}
-                  active={activeId === scenario.id}
-                />
+            <header className="flex items-baseline justify-between gap-4 border-b border-stone-100 px-4 py-3">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-sm font-semibold text-stone-900">{scenario.name}</h3>
+                  <StatusChip
+                    imported={importedIds.has(scenario.id)}
+                    active={activeId === scenario.id}
+                  />
+                </div>
+                <p className="mt-0.5 text-xs text-stone-500">
+                  Use when: <span className="text-stone-700">{useWhen}</span>
+                </p>
               </div>
-              <p className="mt-0.5 text-xs text-stone-500">
-                Use when: <span className="text-stone-700">{useWhen}</span>
-              </p>
+              {/* The code is for sending somewhere else. Importing it back into
+                  this page is refused: the id is already saved, because the app
+                  seeds these through `config.scenarios`. */}
+              <button
+                onClick={() => handleCopy(scenario.id, code)}
+                className="shrink-0 rounded-md border border-stone-300 px-2.5 py-1.5 text-xs font-medium text-stone-700 transition hover:border-stone-900 hover:text-stone-900"
+              >
+                {copiedId === scenario.id ? 'Copied — paste it in a ticket' : 'Copy scenario code'}
+              </button>
             </header>
 
             <div className="space-y-3 px-4 py-3">
