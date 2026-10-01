@@ -23,6 +23,18 @@ export type MockingConfig = {
    * is unreachable.
    */
   onDemandHandlers?: RequestHandler[];
+  /**
+   * Scenario codes to seed the panel with — the same base64 strings the share
+   * button produces and the import box accepts.
+   *
+   * Seeding merges with whatever is already persisted: a code whose scenario id
+   * is already saved is left untouched, so a visitor's own edits survive a
+   * reload. Seeding never activates a scenario either — which one is active is
+   * read from the persisted state, so the panel stays in charge of that.
+   *
+   * An unreadable code is reported and skipped; the rest still load.
+   */
+  scenarios?: string[];
 };
 
 export type MockingServerConfig = {

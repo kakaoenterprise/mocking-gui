@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useHandlerStore } from '@store/useHandlerStore';
 import MockingGUIWorkerManager from '@utils/browser/workerManager';
 import { convertToMswHandler } from '@utils/handler/convertToMsw';
+import { decodeScenario } from '@utils/scenario';
 import { mergeHandlersWithSwagger } from '@utils/swagger/merge';
 
 import useSwaggerHandlerSetup from './useSwaggerHandlerSetup';
@@ -16,6 +17,7 @@ const useSetupMockingGUIWorker = (config: MockingConfig = {}) => {
     swagger = [],
     worker: workerStartOptions = {},
     onDemandHandlers = [],
+    scenarios: scenarioCodes = [],
   } = config;
   const [isWorkerReady, setIsWorkerReady] = useState(false);
   const [isHandlersReady, setIsHandlersReady] = useState(false);
@@ -41,9 +43,12 @@ const useSetupMockingGUIWorker = (config: MockingConfig = {}) => {
 
   const memoizedSwaggerSources = useMemo(() => swagger, [JSON.stringify(swagger)]);
 
+  const memoizedScenarioCodes = useMemo(() => scenarioCodes, [JSON.stringify(scenarioCodes)]);
+
   const { swaggerHandlers, isSwaggerReady } = useSwaggerHandlerSetup(memoizedSwaggerSources);
 
   const setupInitialState = useHandlerStore(state => state.setupInitialState);
+  const initScenarios = useHandlerStore(state => state.initScenarios);
   const handlerConfigs = useHandlerStore(state => state.handlerConfigs);
   const storeHandlers = useHandlerStore(state => state.handlers);
   useEffect(() => {
@@ -87,11 +92,32 @@ const useSetupMockingGUIWorker = (config: MockingConfig = {}) => {
   useEffect(() => {
     if (!isSwaggerReady) return;
 
+    // Seeded before setupInitialState on purpose: that call runs
+    // computeActiveScenarioId, which clears a persisted activeScenarioId whose
+    // scenario it cannot find in the list. Seeding afterwards would therefore
+    // drop the active scenario on every reload.
+    const declaredScenarios = memoizedScenarioCodes.flatMap(code => {
+      const scenario = decodeScenario(code);
+      if (!scenario) {
+        console.warn('[MockingGUI] Skipped an unreadable code in `config.scenarios`.');
+        return [];
+      }
+      return [scenario];
+    });
+    if (declaredScenarios.length > 0) initScenarios(declaredScenarios);
+
     // Initialize with merged Handler State when Swagger handler is ready
     const configuredHandlers = mergeHandlersWithSwagger(memoizedMocks, swaggerHandlers);
     setupInitialState(configuredHandlers);
     setIsHandlersReady(true);
-  }, [memoizedMocks, isSwaggerReady, swaggerHandlers, setupInitialState]);
+  }, [
+    memoizedMocks,
+    isSwaggerReady,
+    swaggerHandlers,
+    setupInitialState,
+    memoizedScenarioCodes,
+    initScenarios,
+  ]);
 
   useEffect(() => {
     if (isWorkerReady && isHandlersReady && worker) {
