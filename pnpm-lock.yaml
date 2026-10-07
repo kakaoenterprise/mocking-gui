@@ -215,6 +215,52 @@ importers:
         specifier: ^5.2.0
         version: 5.4.21(@types/node@24.0.12)(lightningcss@1.31.1)
 
+  examples/showcase:
+    dependencies:
+      react:
+        specifier: ^19.2.3
+        version: 19.2.3
+      react-dom:
+        specifier: ^19.2.3
+        version: 19.2.3(react@19.2.3)
+    devDependencies:
+      '@kakaocloud/mocking-gui':
+        specifier: workspace:*
+        version: link:../../packages/mocking-gui
+      '@mocking-gui/eslint-config':
+        specifier: workspace:*
+        version: link:../../config/eslint-config
+      '@mocking-gui/typescript-config':
+        specifier: workspace:*
+        version: link:../../config/typescript-config
+      '@tailwindcss/vite':
+        specifier: 4.1.11
+        version: 4.1.11(vite@5.4.21(@types/node@24.0.12)(lightningcss@1.31.1))
+      '@types/react':
+        specifier: ^19.2.3
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      '@vitejs/plugin-react':
+        specifier: ^4.2.1
+        version: 4.7.0(vite@5.4.21(@types/node@24.0.12)(lightningcss@1.31.1))
+      eslint:
+        specifier: ^9.28.0
+        version: 9.39.3(jiti@2.6.1)
+      msw:
+        specifier: ^2.12.1
+        version: 2.12.10(@types/node@24.0.12)(typescript@5.9.3)
+      tailwindcss:
+        specifier: ^4.1.18
+        version: 4.2.1
+      typescript:
+        specifier: ^5.2.2
+        version: 5.9.3
+      vite:
+        specifier: ^5.2.0
+        version: 5.4.21(@types/node@24.0.12)(lightningcss@1.31.1)
+
   packages/mocking-gui:
     dependencies:
       '@radix-ui/react-checkbox':
