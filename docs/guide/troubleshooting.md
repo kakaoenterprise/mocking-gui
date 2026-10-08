@@ -116,6 +116,19 @@ If your local HTTPS setup has an untrusted or self-signed certificate, the brows
 
 ---
 
+## Colon action endpoints (`/resource/:id:action`) merge into one handler, or every request returns 500
+
+### Symptom
+
+- Handlers such as `…/subscriptions/:id:cancel` and `…/subscriptions/:id:accept-pending` show up as a single entry in the panel, and the missing actions cannot be mocked.
+- Or, after registering a URL like `…/:id:cancel`, **every** request (including static assets) fails with a 500 and the console shows `Must have text between two parameters`.
+
+### Cause & Solution
+
+MSW's router (path-to-regexp) only accepts a literal colon when it is escaped as `\:`. Versions up to 1.0.6 passed the URL through unchanged, so an unescaped `:action` threw at match time, while an escaped `\:action` was mangled by the handler-key normalization and merged with sibling actions.
+
+Since the fix for [#44](https://github.com/kakaoenterprise/mocking-gui/issues/44), write the colon as-is — `…/subscriptions/:subscription_id:cancel` — and Mocking GUI escapes it for MSW when the handler is registered. See [URL format](./usage/handler-guide#url-format). If you had worked around the bug with a trailing `/(cancel)?` group, you can remove it.
+
 ## Still having issues?
 
 If the above solutions didn't help, feel free to reach out through the following channels.

@@ -50,6 +50,11 @@ export type MockingServerConfig = {
 export interface HandlerConfigOption {
   name: string;
   description?: string;
+  /**
+   * URL to intercept. `:name` at the start of a path segment is a path parameter;
+   * any other colon in the path is a literal (e.g. `/subscriptions/:id:cancel`).
+   * Literal colons are escaped for MSW automatically — do not write `\:`.
+   */
   url: string;
   method: keyof typeof http;
   /**
