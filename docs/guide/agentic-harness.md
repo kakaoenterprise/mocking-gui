@@ -2,7 +2,7 @@
 
 Mocking GUI is developed with high quality and consistency through an **AI Agentic Harness** system. All contributors can leverage specialized agents and workflows to contribute to the project more easily and systematically.
 
-## 🎯 Mission Map: Workflow Selection Guide
+## Mission Map: Workflow Selection Guide
 
 Choose the agent mission that matches your contribution goal.
 
@@ -24,7 +24,7 @@ Choose the agent mission that matches your contribution goal.
 - **How**: Run `/technical-solution-support` in your AI assistant.
 - **Result**: The `technical-solution-support` workflow analyzes your project environment and provides an optimized migration strategy and onboarding guide.
 
-## 🚀 Agentic Quality Gate
+## Agentic Quality Gate
 
 Every workflow automatically performs the following to reduce contributor burden:
 

@@ -1,6 +1,7 @@
 # GUI Guide
 
-This guide explains how to use the Mocking GUI Panel.
+You opened the panel and met four tabs and a list of rows. This is what each of
+them does.
 
 ## Panel Overview
 

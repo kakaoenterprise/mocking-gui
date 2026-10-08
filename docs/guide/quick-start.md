@@ -1,12 +1,18 @@
 # Installation & Setup
 
-This guide walks you through installing Mocking GUI and setting up the initial configuration for your project.
+You have an app that calls an API, and you want a panel in it. This takes a
+package, a Service Worker file and one component — about three minutes, most of
+which is the install.
 
-## 📋 Requirements
+## Requirements
 
-- **Node.js** >= 22.0.0
-- **pnpm** >= 9.0.0
-- **React** >= 19.2.1
+Peer dependencies, taken from the package itself:
+
+- **msw** `^2.8.0`
+- **react** / **react-dom** `^18.0.0 || ^19.0.0`
+
+Any package manager works. The Node and pnpm versions pinned in this repository
+are for building it, not for using it.
 
 ## 1. Install Package
 
