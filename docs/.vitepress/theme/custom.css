@@ -17,8 +17,10 @@
 /* ── tokens ─────────────────────────────────────────────────────────── */
 
 :root {
-  --mg-paper: #fcfcfb;
-  --mg-paper-sunk: #f4f3f0;
+  /* Paper, not white. #fcfcfb sat 4/255 from pure white, which reads as white
+     once it fills the viewport and there is nothing beside it to compare. */
+  --mg-paper: #faf8f3;
+  --mg-paper-sunk: #f1efe6;
   --mg-ink: #1c1b18;
   --mg-ink-soft: #3d3b36;
   --mg-muted: #6b6862;
