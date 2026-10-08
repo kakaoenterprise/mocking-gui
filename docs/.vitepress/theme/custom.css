@@ -132,6 +132,10 @@
 .VPLocalSearchBox .shell,
 .VPMenu {
   background: var(--mg-paper) !important;
+  /* The reset above squares `.VPLocalSearchBox`, not the shell inside it. This
+     one needs `!important`: the component is loaded on demand, so its scoped
+     style is injected after this file and wins every tie on source order. */
+  border-radius: 0 !important;
   border: 1px solid var(--mg-rule-strong);
 }
 
@@ -639,9 +643,43 @@
   color: var(--mg-muted);
 }
 
-.DocSearch-Button-Keys {
-  font-family: var(--vp-font-family-mono);
+/* Pushed to the far edge: the shortcut labels the control, it does not sit in
+   the middle of it next to the word it labels. */
+.DocSearch-Button .DocSearch-Button-Keys {
+  display: flex;
+  margin-left: auto;
 }
+
+/**
+ * One key cap, not two.
+ *
+ * The default theme draws the pair as a single joined box — the first key
+ * carries three sides, the next one closes it — so they must stay adjacent, and
+ * both halves have to agree on the rule colour. The fill was
+ * `--docsearch-key-gradient`, which is near-white and the only thing on this
+ * page that was.
+ */
+.DocSearch-Button .DocSearch-Button-Key {
+  height: 18px;
+  margin: 0;
+  background: var(--mg-paper-sunk);
+  border-color: var(--mg-rule);
+  color: var(--mg-muted);
+}
+
+.DocSearch-Button .DocSearch-Button-Key + .DocSearch-Button-Key {
+  border-right-color: var(--mg-rule);
+}
+
+/* The glyph is drawn by the theme as `::after` on a zero-size key. */
+.DocSearch-Button .DocSearch-Button-Key:first-child::after,
+.mac .DocSearch-Button .DocSearch-Button-Key:first-child::after {
+  font-family: var(--vp-font-family-mono);
+  font-size: 11px;
+  color: var(--mg-muted);
+}
+
+/* ── the search modal ───────────────────────────────────────────────── */
 
 .VPLocalSearchBox .shell .search-bar {
   border: 0;
@@ -656,7 +694,8 @@
   padding: 12px 0;
 }
 
-/* The keyboard legend is chrome, so it speaks in the chrome's alphabet. */
+/* The keyboard legend is chrome, so it speaks in the chrome's alphabet — and in
+   the same key cap the nav's shortcut draws. */
 .VPLocalSearchBox .shell .search-keyboard-shortcuts {
   font-family: var(--vp-font-family-mono);
   font-size: 10px;
