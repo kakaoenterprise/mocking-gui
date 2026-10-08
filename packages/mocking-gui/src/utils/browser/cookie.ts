@@ -47,6 +47,17 @@ export const clearSyncCookies = () => {
   listCookieNames(document.cookie).filter(isSyncCookieName).forEach(deleteCookie);
 };
 
+let ssrSyncEnabled = true;
+
+/**
+ * Turns the SSR sync cookie on or off (`MockingConfig.ssrSync`). While off,
+ * every sync call removes the library's cookies instead of writing one, so a
+ * browser-only project carries no `mocking_gui_sync` cookie on its requests.
+ */
+export const setSsrSyncEnabled = (enabled: boolean) => {
+  ssrSyncEnabled = enabled;
+};
+
 type SyncEntry = { key: string; encoded: string; isSwagger: boolean };
 
 const buildEntry = (
@@ -166,6 +177,11 @@ export const syncStateToCookie = (
   handlers: HandlerState[] = [],
 ) => {
   if (typeof window === 'undefined') return;
+
+  if (!ssrSyncEnabled) {
+    clearSyncCookies();
+    return;
+  }
 
   try {
     const encoded = encodeSyncState(handlerConfigs, handlers);

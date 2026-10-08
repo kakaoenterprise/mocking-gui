@@ -1,6 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { syncStateToCookie, getCookie, COOKIE_KEY, COOKIE_BUDGET, encodeSyncState } from './cookie';
+import {
+  syncStateToCookie,
+  getCookie,
+  COOKIE_KEY,
+  COOKIE_BUDGET,
+  encodeSyncState,
+  setSsrSyncEnabled,
+} from './cookie';
 import { installCookieStore } from '../../test/cookieStore';
 import { HandlerType } from '../../types/handler';
 import { getHandlerKey, hashHandlerKey } from '../common/keys';
@@ -83,7 +90,43 @@ describe('syncStateToCookie', () => {
 
   beforeEach(() => {
     cookies = installCookieStore();
+    setSsrSyncEnabled(true);
     vi.restoreAllMocks();
+  });
+
+  describe('ssrSync: false', () => {
+    const activeConfigs = {
+      [key(manualHandler)]: { active: true, type: HandlerType.MANUAL, variant: '200-default' },
+    };
+
+    it('writes no cookie when SSR sync is disabled', () => {
+      setSsrSyncEnabled(false);
+
+      syncStateToCookie(activeConfigs, handlers);
+
+      expect(cookies.names()).toEqual([]);
+    });
+
+    it('removes cookies left by earlier writes when SSR sync is disabled', () => {
+      cookies.seed(COOKIE_KEY, 'v2~abc');
+      cookies.seed(`${COOKIE_KEY}_0`, '%5B%5D');
+      cookies.seed('unrelated', '1');
+      setSsrSyncEnabled(false);
+
+      syncStateToCookie(activeConfigs, handlers);
+
+      expect(cookies.names()).toEqual(['unrelated']);
+    });
+
+    it('resumes writing once SSR sync is enabled again', () => {
+      setSsrSyncEnabled(false);
+      syncStateToCookie(activeConfigs, handlers);
+      setSsrSyncEnabled(true);
+
+      syncStateToCookie(activeConfigs, handlers);
+
+      expect(cookies.names()).toEqual([COOKIE_KEY]);
+    });
   });
 
   describe('v2 format', () => {

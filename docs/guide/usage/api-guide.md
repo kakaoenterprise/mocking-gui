@@ -26,6 +26,13 @@ interface MockingConfig {
    * Every http.* handler belongs in `mocks`, not here.
    */
   onDemandHandlers?: RequestHandler[];
+
+  /**
+   * Mirror panel state into the `mocking_gui_sync` cookie read by
+   * `setupMockingServer`. Default `true`. Set `false` in browser-only
+   * projects to keep the cookie off every request.
+   */
+  ssrSync?: boolean;
 }
 ```
 
@@ -86,6 +93,7 @@ The GUI panel keeps the browser and the server in step through one cookie, `mock
 - Every write first removes any `mocking_gui_sync*` cookie a previous write left behind, so stale state never accumulates in the request header.
 - The value is budgeted at 3 800 bytes (roughly 300 enabled handlers). Beyond that, Swagger handler overrides are dropped first and a warning naming them is logged in the browser console; Manual/Auto overrides are always kept, and a second warning is logged if they alone exceed the budget. The budget exists because request headers have a total limit (16 KB in Node, 8 KB in nginx) shared with every other cookie on the site.
 - The value uses only characters that `encodeURIComponent` leaves untouched, so cookie APIs that re-serialize values (such as Next.js `cookies().toString()`) pass it through unchanged.
+- If your project never calls `setupMockingServer`, pass `ssrSync: false` in `MockingConfig`. The cookie is then not written at all, and any `mocking_gui_sync*` cookie an earlier version left behind is removed on the next panel change.
 
 ## Types
 

@@ -35,6 +35,15 @@ export type MockingConfig = {
    * An unreadable code is reported and skipped; the rest still load.
    */
   scenarios?: string[];
+  /**
+   * Whether the panel state is mirrored into the `mocking_gui_sync` cookie that
+   * `setupMockingServer` reads. Defaults to `true`.
+   *
+   * Set to `false` in browser-only projects that never call
+   * `setupMockingServer`: the cookie is then not written, and any
+   * `mocking_gui_sync*` cookie left by an earlier version is removed.
+   */
+  ssrSync?: boolean;
 };
 
 export type MockingServerConfig = {

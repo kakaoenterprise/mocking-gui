@@ -192,6 +192,8 @@ variant := `[A-Za-z0-9_-]*` 이면 그대로, 아니면 `!` + base64url(UTF-8) �
   - 테스트: `cookie.test.ts`(15) · `state.test.ts`(16) · `state.collision.test.ts`(1, `vi.mock` 으로 충돌 강제) · `keys.test.ts`(3) · `setup.node.test.ts` 통합 3건(v2 variant 적용 / 기본값 / 레거시) · 테스트 더블 `src/test/cookieStore.ts`
   - 문서: `api-guide.md` cookie 동작 절 · `troubleshooting.md` 431 항목 · ADR‑0008 신규(ADR‑0003 superseded) · `decisions/INDEX.md`
 
+- 2026-10-08 (후속 커밋): `MockingConfig.ssrSync?: boolean`(기본 true) 추가. `false`면 `syncStateToCookie`가 쓰기 대신 `clearSyncCookies()`만 수행해 브라우저 전용 프로젝트가 쿠키를 싣지 않는다. 플래그는 `useSetupMockingGUIWorker` 렌더 시점에 동기 설정(스토어 subscribe보다 먼저). 테스트 3건(cookie.test.ts) 선작성 후 구현, 문서(api-guide) 반영.
+
 ## 6. Validation
 
 | Gate                                                  | 결과                                                                                                |
