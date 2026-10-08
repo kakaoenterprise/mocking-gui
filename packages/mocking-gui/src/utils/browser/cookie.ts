@@ -87,33 +87,40 @@ const join = (entries: SyncEntry[]) =>
   SYNC_FORMAT_PREFIX + entries.map(entry => entry.encoded).join(ENTRY_SEPARATOR);
 
 /**
- * Drops Swagger-type entries (in original order) until the encoded payload fits
- * the budget. Manual/Auto entries are always preserved, so the result can still
- * exceed the budget when they alone are too large; the caller reports that.
+ * Trims `entries` to the budget. Swagger entries are dropped first (any that
+ * fit are kept, original order preserved). Only if the Manual/Auto entries
+ * alone do not fit, their trailing entries are dropped as well and every
+ * Swagger entry is skipped, so at least a leading prefix still syncs.
  */
 const fitToBudget = (entries: SyncEntry[], budget: number) => {
-  if (join(entries).length <= budget) return { kept: entries, dropped: [] as SyncEntry[] };
+  const droppedSwagger: SyncEntry[] = [];
+  const droppedOther: SyncEntry[] = [];
+  if (join(entries).length <= budget) return { kept: entries, droppedSwagger, droppedOther };
 
-  const kept = entries.filter(entry => !entry.isSwagger);
-  const dropped: SyncEntry[] = [];
-  let length = join(kept).length;
-
-  for (const entry of entries) {
-    if (!entry.isSwagger) continue;
-    const next = length + ENTRY_SEPARATOR.length + entry.encoded.length;
-    if (next > budget) {
-      dropped.push(entry);
-      continue;
-    }
+  const kept: SyncEntry[] = [];
+  let length = SYNC_FORMAT_PREFIX.length;
+  const tryAppend = (entry: SyncEntry) => {
+    const next = length + (kept.length > 0 ? ENTRY_SEPARATOR.length : 0) + entry.encoded.length;
+    if (next > budget) return false;
     kept.push(entry);
     length = next;
+    return true;
+  };
+
+  for (const entry of entries) {
+    if (entry.isSwagger) continue;
+    if (droppedOther.length > 0 || !tryAppend(entry)) droppedOther.push(entry);
+  }
+  for (const entry of entries) {
+    if (!entry.isSwagger) continue;
+    if (droppedOther.length > 0 || !tryAppend(entry)) droppedSwagger.push(entry);
   }
 
   // Restore original order so the server applies entries deterministically.
   const order = new Map(entries.map((entry, index) => [entry, index]));
   kept.sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0));
 
-  return { kept, dropped };
+  return { kept, droppedSwagger, droppedOther };
 };
 
 const sampleKeys = (entries: SyncEntry[]) =>
@@ -140,23 +147,21 @@ export const encodeSyncState = (
     .filter(([, config]) => config.active)
     .map(([key, config]) => buildEntry(key, config, handlerByKey.get(key)));
 
-  const { kept, dropped } = fitToBudget(entries, budget);
+  const { kept, droppedSwagger, droppedOther } = fitToBudget(entries, budget);
   const encoded = join(kept);
 
-  if (dropped.length > 0) {
+  if (droppedOther.length > 0) {
     console.warn(
-      `[MockingGUI] Mocking state too large to sync in full. Dropped ${dropped.length} Swagger ` +
-        `handler override(s) to stay within the ${budget} byte cookie budget (e.g. ${sampleKeys(dropped)}). ` +
+      `[MockingGUI] Mocking state too large to sync in full. Dropped ${droppedOther.length} Manual/Auto ` +
+        `handler override(s) and every Swagger override to stay within the ${budget} byte cookie ` +
+        `budget (e.g. ${sampleKeys(droppedOther)}). Disable some handlers to restore full SSR synchronization.`,
+    );
+  } else if (droppedSwagger.length > 0) {
+    console.warn(
+      `[MockingGUI] Mocking state too large to sync in full. Dropped ${droppedSwagger.length} Swagger ` +
+        `handler override(s) to stay within the ${budget} byte cookie budget (e.g. ${sampleKeys(droppedSwagger)}). ` +
         'Manual/Auto handler overrides were preserved. Some handler state may not be ' +
         'reflected in SSR-rendered output.',
-    );
-  }
-  if (encoded.length > budget) {
-    console.warn(
-      `[MockingGUI] Mocking state (${encoded.length} bytes) exceeds the ${budget} byte cookie ` +
-        `budget even with every Swagger override dropped: ${kept.length} Manual/Auto overrides ` +
-        'are active. The browser may reject the cookie and SSR will then fall back to defaults. ' +
-        'Disable some handlers to restore SSR synchronization.',
     );
   }
 
@@ -178,12 +183,12 @@ export const syncStateToCookie = (
 ) => {
   if (typeof window === 'undefined') return;
 
-  if (!ssrSyncEnabled) {
-    clearSyncCookies();
-    return;
-  }
-
   try {
+    if (!ssrSyncEnabled) {
+      clearSyncCookies();
+      return;
+    }
+
     const encoded = encodeSyncState(handlerConfigs, handlers);
 
     clearSyncCookies();

@@ -194,6 +194,10 @@ variant := `[A-Za-z0-9_-]*` 이면 그대로, 아니면 `!` + base64url(UTF-8) �
 
 - 2026-10-08 (후속 커밋): `MockingConfig.ssrSync?: boolean`(기본 true) 추가. `false`면 `syncStateToCookie`가 쓰기 대신 `clearSyncCookies()`만 수행해 브라우저 전용 프로젝트가 쿠키를 싣지 않는다. 플래그는 `useSetupMockingGUIWorker` 렌더 시점에 동기 설정(스토어 subscribe보다 먼저). 테스트 3건(cookie.test.ts) 선작성 후 구현, 문서(api-guide) 반영.
 
+- 2026-10-08 (전체 PR 리뷰 후 수정): `/code-review upstream/main...fix/ssr-sync-cookie-431 high` 10건 → 6건 반영, 4건 보류.
+  - 반영: ssrSync off 경로도 try/catch 안으로(쿠키 접근 예외가 subscribe 밖으로 새지 않음) · Manual/Auto 단독 초과 시 꼬리 절삭(이전 쿠키를 지운 뒤 브라우저가 거부할 값을 쓰던 문제) · `fitToBudget` 첫 항목 구분자 off-by-one · 서버 미등록 해시 경고를 프로세스당 메시지별 1회로 · `parseLegacy`가 `charToType` 재사용 · `MockingServerConfig`에서 `ssrSync` 제외 · 스토어 subscribe가 `handlerConfigs`/`handlers` 변경 시에만 쿠키 재작성.
+  - 보류: 레거시 single/청크 우선순위(양쪽 시나리오 모두 추정이라 ADR 결정 유지) · `setSsrSyncEnabled` 렌더 시점 호출(복수 훅 인스턴스는 비현실적, false면 다음 쓰기에서 자가 정리) · RUN.md 단일 파일 구성(2026-09-29·10-07 워크스트림과 동일한 light run 관례).
+
 ## 6. Validation
 
 | Gate                                                  | 결과                                                                                                |

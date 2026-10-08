@@ -134,6 +134,19 @@ describe('reconstructHandlerConfigsFromCookie', () => {
       expect(warnSpy.mock.calls[0][0]).toContain('Ignored 3');
     });
 
+    it('warns about the same unknown hashes only once per process', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const cookie = `mocking_gui_sync=v2~yyyyy1~yyyyy2~${hash(manualHandler)}`;
+
+      reconstructHandlerConfigsFromCookie(cookie, handlers);
+      reconstructHandlerConfigsFromCookie(cookie, handlers);
+      reconstructHandlerConfigsFromCookie(`mocking_gui_sync=v2~yyyyy3`, handlers);
+
+      const messages = warnSpy.mock.calls.map(call => String(call[0]));
+      expect(messages.filter(message => message.includes('yyyyy1'))).toHaveLength(1);
+      expect(messages.filter(message => message.includes('yyyyy3'))).toHaveLength(1);
+    });
+
     it('skips only the malformed entry and keeps the rest', () => {
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 

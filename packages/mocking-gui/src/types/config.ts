@@ -53,7 +53,7 @@ export type MockingServerConfig = {
    */
 
   cookie?: string | null;
-} & Omit<MockingConfig, 'method' | 'url' | 'name'>;
+} & Omit<MockingConfig, 'method' | 'url' | 'name' | 'ssrSync'>;
 
 /** Handler Config Options */
 export interface HandlerConfigOption {

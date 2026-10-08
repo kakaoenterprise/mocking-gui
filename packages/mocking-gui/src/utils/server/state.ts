@@ -1,5 +1,3 @@
-import { HandlerType } from '@mocking-gui-types/handler';
-
 import { getHandlerKey, hashHandlerKey } from '../common/keys';
 import {
   COOKIE_KEY,
@@ -49,12 +47,21 @@ const indexHandlersByHash = (handlers: HandlerState[]): HashIndex => {
   return index;
 };
 
+/**
+ * Messages already logged by this process. The same mismatch (e.g. a Swagger
+ * source registered only in the browser) recurs on every SSR request, so each
+ * distinct message is logged once instead of once per request.
+ */
+const warnedMessages = new Set<string>();
+
 const warnSkipped = (reason: string, hashes: string[]) => {
   if (hashes.length === 0) return;
-  console.warn(
+  const message =
     `[MockingGUI] Ignored ${hashes.length} sync cookie entr${hashes.length === 1 ? 'y' : 'ies'} ` +
-      `(${reason}): ${hashes.slice(0, 5).join(', ')}${hashes.length > 5 ? ', …' : ''}`,
-  );
+    `(${reason}): ${hashes.slice(0, 5).join(', ')}${hashes.length > 5 ? ', …' : ''}`;
+  if (warnedMessages.has(message)) return;
+  warnedMessages.add(message);
+  console.warn(message);
 };
 
 const parseV2 = (
@@ -113,14 +120,7 @@ const parseLegacy = (value: string): Record<string, StoredHandlerVariants> => {
       return;
     }
 
-    const type =
-      typeChar === 'M'
-        ? HandlerType.MANUAL
-        : typeChar === 'A'
-          ? HandlerType.AUTO
-          : HandlerType.SWAGGER;
-
-    configs[key] = { active: true, type, variant: variant || undefined };
+    configs[key] = { active: true, type: charToType(typeChar), variant: variant || undefined };
   });
 
   return configs;

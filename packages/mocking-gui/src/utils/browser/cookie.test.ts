@@ -325,15 +325,31 @@ describe('syncStateToCookie', () => {
       expect(hashes.slice(0, 10)).toEqual(list.slice(0, 10).map(hash));
     });
 
-    it('warns when Manual/Auto entries alone exceed the budget', () => {
+    it('truncates trailing Manual/Auto entries with a warning when they alone exceed the budget', () => {
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const { list, configs } = fixtures(600, HandlerType.MANUAL, LONG_VARIANT);
 
       const encoded = encodeSyncState(configs, list);
 
-      expect(encoded.length).toBeGreaterThan(COOKIE_BUDGET);
+      expect(encoded.length).toBeLessThanOrEqual(COOKIE_BUDGET);
+      const hashes = encoded.slice(3).split('~');
+      expect(hashes.length).toBeGreaterThan(0);
+      expect(hashes.map(entry => entry.split('.')[0])).toEqual(
+        list.slice(0, hashes.length).map(hash),
+      );
       expect(warnSpy).toHaveBeenCalledTimes(1);
-      expect(warnSpy.mock.calls[0][0]).toMatch(/exceeds the \d+ byte cookie budget even/);
+      expect(warnSpy.mock.calls[0][0]).toMatch(/Dropped \d+ Manual\/Auto/);
+    });
+
+    it('keeps a Swagger-only prefix that lands exactly on the budget after truncation', () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const { list, configs } = swaggerFixtures(20, LONG_VARIANT);
+      const firstNineteen = Object.fromEntries(Object.entries(configs).slice(0, 19));
+      const prefix = encodeSyncState(firstNineteen, list, Number.POSITIVE_INFINITY);
+
+      const encoded = encodeSyncState(configs, list, prefix.length);
+
+      expect(encoded).toBe(prefix);
     });
   });
 
@@ -344,6 +360,24 @@ describe('syncStateToCookie', () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
 
       expect(() => syncStateToCookie(null as never, handlers)).toThrow();
+
+      process.env.NODE_ENV = originalEnv;
+    });
+
+    it('logs and does not throw in production when cookie access fails while SSR sync is disabled', () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      Object.defineProperty(document, 'cookie', {
+        configurable: true,
+        get() {
+          throw new Error('SecurityError');
+        },
+      });
+      setSsrSyncEnabled(false);
+
+      expect(() => syncStateToCookie({}, handlers)).not.toThrow();
+      expect(errorSpy).toHaveBeenCalled();
 
       process.env.NODE_ENV = originalEnv;
     });
