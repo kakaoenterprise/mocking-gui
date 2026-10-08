@@ -56,11 +56,32 @@ export const userHandlers: HandlerConfigOption[] = [
 | Field                | Type                       | Description                                                      |
 | -------------------- | -------------------------- | ---------------------------------------------------------------- |
 | `name`               | `string`                   | Handler name displayed in the Mocking GUI Panel list             |
-| `url`                | `string`                   | URL path to intercept. Supports Path Parameters (`:id`)          |
+| `url`                | `string`                   | URL path to intercept. See [URL format](#url-format) below       |
 | `method`             | `'get' \| 'post' \| ...`   | HTTP Method                                                      |
 | `responseVariants`   | `HandlerResponseVariant[]` | (Manual) List of selectable responses                            |
 | `responseVariantsFn` | `Function`                 | (Auto) Function for dynamic response generation based on request |
 | `category`           | `string` (Optional)        | Category for grouping/filtering handlers                         |
+
+#### URL format
+
+| Pattern                           | Meaning                                                                 |
+| --------------------------------- | ----------------------------------------------------------------------- |
+| `:name` at the start of a segment | Path parameter, available as `params.name` (same as MSW)                |
+| any other `:` in the path         | A literal colon — e.g. the action suffix in `/subscriptions/:id:cancel` |
+| `*` prefix                        | Any origin (`*/v1/users/:id`)                                           |
+
+```ts
+// Google AIP-136 style actions: write the colon as-is, no escaping needed
+{ method: 'post', url: `${BASE_URL}/v1/subscriptions/:subscription_id:cancel` }
+{ method: 'post', url: `${BASE_URL}/v1/subscriptions/:subscription_id:accept-pending` }
+{ method: 'get',  url: `${BASE_URL}/v1/catalog/products:compare` }
+```
+
+`POST …/subscriptions/s1:cancel` hits the first handler with `params.subscription_id === 's1'`; `s1:accept-pending` hits the second. Mocking GUI escapes the literal colon for MSW (`\:`) when it registers the handler, so you never have to write `\:` yourself (a `\:` you already have keeps working).
+
+::: warning Register action handlers before the plain resource handler
+MSW uses the first handler that matches. A `/subscriptions/:subscription_id` handler listed **before** `/subscriptions/:subscription_id:cancel` would capture `s1:cancel` with `subscription_id === 's1:cancel'`. Put the action handlers first.
+:::
 
 ### `HandlerResponseVariant`
 

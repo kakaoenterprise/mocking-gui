@@ -10,6 +10,23 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Tailwind's spacing/text/container tokens are `rem`, and `rem` always resolves
+ * against the HOST document's `<html>` font-size even inside a shadow tree
+ * (the mount's own `font-size: 14px` does not help). A host with
+ * `html { font-size: 62.5% }` would shrink every panel size to 62.5%, so the
+ * tokens the panel consumes are pinned in px (Tailwind defaults at 16px).
+ * Line-height tokens are unitless ratios and need no change.
+ */
+@theme {
+  --spacing: 4px;
+  --container-sm: 384px;
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+}
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -58,17 +75,67 @@
     border-color: var(--border);
     outline: 0 solid transparent;
     outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
+    /*
+     * Defaults for every `--tw-*` variable Tailwind v4 registers with `@property`
+     * (mirrors the `@layer properties` fallback Tailwind only emits for old
+     * browsers). Browsers ignore `@property` inside a shadow tree, so a utility
+     * that reads one of these without its own fallback — `ring-*` reads
+     * `--tw-ring-offset-width`, `translate-x-*` reads `--tw-translate-y`,
+     * `after:*` reads `--tw-content` — is invalid here unless the host page
+     * registers the same properties (any Tailwind v4 app) or sets them on `*`
+     * (Tailwind v3). Declaring all of them on the mount makes the panel render
+     * the same way regardless of the host page. Keep this list in sync with
+     * Tailwind's fallback when upgrading.
+     */
+    --tw-translate-x: 0;
+    --tw-translate-y: 0;
+    --tw-translate-z: 0;
+    --tw-scale-x: 1;
+    --tw-scale-y: 1;
+    --tw-scale-z: 1;
+    --tw-rotate-x: initial;
+    --tw-rotate-y: initial;
+    --tw-rotate-z: initial;
+    --tw-skew-x: initial;
+    --tw-skew-y: initial;
+    --tw-space-y-reverse: 0;
+    --tw-divide-y-reverse: 0;
+    --tw-border-style: solid;
+    --tw-leading: initial;
+    --tw-font-weight: initial;
+    --tw-tracking: initial;
     --tw-shadow: 0 0 #0000;
     --tw-shadow-color: initial;
     --tw-shadow-alpha: 100%;
     --tw-inset-shadow: 0 0 #0000;
     --tw-inset-shadow-color: initial;
     --tw-inset-shadow-alpha: 100%;
+    --tw-ring-color: initial;
     --tw-ring-shadow: 0 0 #0000;
+    --tw-inset-ring-color: initial;
     --tw-inset-ring-shadow: 0 0 #0000;
+    --tw-ring-inset: initial;
+    --tw-ring-offset-width: 0px;
+    /* Tailwind's default is #fff; follow the panel theme so dark mode gets a dark offset. */
+    --tw-ring-offset-color: var(--background);
     --tw-ring-offset-shadow: 0 0 #0000;
-    --tw-border-style: solid;
     --tw-outline-style: solid;
+    --tw-blur: initial;
+    --tw-brightness: initial;
+    --tw-contrast: initial;
+    --tw-grayscale: initial;
+    --tw-hue-rotate: initial;
+    --tw-invert: initial;
+    --tw-opacity: initial;
+    --tw-saturate: initial;
+    --tw-sepia: initial;
+    --tw-drop-shadow: initial;
+    --tw-drop-shadow-color: initial;
+    --tw-drop-shadow-alpha: 100%;
+    --tw-drop-shadow-size: initial;
+    --tw-duration: initial;
+    --tw-ease: initial;
+    --tw-content: '';
   }
 
   #mocking-gui-shadow-mount :where(p, h1, h2, h3, h4, h5, h6, ul, ol, dl, figure) {
@@ -85,19 +152,21 @@
     color: inherit;
   }
 
-  #mocking-gui-shadow-mount button[role='switch'] > span {
-    transform: translateX(0);
-    transition: transform 150ms;
-    will-change: transform;
-  }
-
-  #mocking-gui-shadow-mount button[role='switch'][data-state='checked'] > span {
-    transform: translateX(16px);
-  }
-
   #mocking-gui-shadow-mount {
     all: initial;
-    --radius: 0.625rem;
+    /*
+     * `all: initial` leaves the mount `display: inline` and does not touch
+     * `direction`, `unicode-bidi`, `user-select` or `color-scheme`, which the
+     * host page can otherwise push into the panel (RTL hosts mirror the panel,
+     * `* { user-select: none }` blocks text selection, host `color-scheme`
+     * restyles native controls).
+     */
+    display: block;
+    direction: ltr;
+    unicode-bidi: isolate;
+    user-select: text;
+    color-scheme: light;
+    --radius: 10px;
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -149,6 +218,7 @@
   }
 
   #mocking-gui-shadow-mount.dark {
+    color-scheme: dark;
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);

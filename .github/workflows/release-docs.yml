@@ -20,6 +20,9 @@ jobs:
 
       - uses: ./.github/actions/setup
 
+      - name: Build demo app into the docs site
+        run: pnpm demo:build
+
       - name: Run build
         run: pnpm build --filter @mocking-gui/docs
 

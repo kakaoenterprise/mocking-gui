@@ -1,34 +1,189 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 
 import { reconstructHandlerConfigsFromCookie } from './state';
 import { HandlerType } from '../../types/handler';
+import { getHandlerKey, hashHandlerKey } from '../common/keys';
 
-import type { StoredHandlerVariants } from '../../types/handler';
+import type { HandlerState } from '../../types/handler';
 
 /**
- * Server-side state reconstruction tests
- * Validates: multi-cookie reading, error handling, SSR state consistency
+ * Server-side state reconstruction tests (issue #45)
+ * Validates: v2 hash resolution with default restoration, legacy single/chunk reading,
+ * chunk precedence over a stale single cookie, error handling
  */
 
+const ORIGIN = 'https://api.example.com';
+
+const manualHandler: HandlerState = {
+  name: 'Get Users',
+  method: 'get',
+  url: `${ORIGIN}/users`,
+  responseVariants: [
+    { name: '200-default', status: 200, body: [] },
+    { name: '400-error', status: 400, body: {} },
+  ],
+};
+const swaggerHandler: HandlerState = {
+  name: 'List Images',
+  method: 'get',
+  url: `${ORIGIN}/v1/images`,
+  swaggerResponseVariants: [
+    { name: '200', status: 200, body: [] },
+    { name: '404', status: 404, body: {} },
+  ],
+};
+const autoHandler: HandlerState = {
+  name: 'Create User',
+  method: 'post',
+  url: `${ORIGIN}/users`,
+  responseVariantsFn: () => ({ name: '201', status: 201, body: {} }),
+};
+const dualHandler: HandlerState = {
+  name: 'Get Flavor',
+  method: 'get',
+  url: `${ORIGIN}/v1/flavors/:id`,
+  responseVariants: [{ name: 'manual-200', status: 200, body: {} }],
+  swaggerResponseVariants: [{ name: '200', status: 200, body: {} }],
+};
+const handlers = [manualHandler, swaggerHandler, autoHandler, dualHandler];
+
+const key = (handler: HandlerState) => getHandlerKey(handler);
+const hash = (handler: HandlerState) => hashHandlerKey(getHandlerKey(handler));
+const legacy = (entries: [string, string, string][]) => encodeURIComponent(JSON.stringify(entries));
+
 describe('reconstructHandlerConfigsFromCookie', () => {
-  const baseConfigs: Record<string, StoredHandlerVariants> = {
-    'GET./users': {
-      active: false,
-      type: HandlerType.MANUAL,
-      variant: '200-default',
-    },
-  };
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
-  describe('Single Cookie Support (backward compatibility)', () => {
-    it('should reconstruct state from single cookie', () => {
-      const syncData = JSON.stringify([
-        ['GET./users', 'M', '200-success'],
-        ['POST./users', 'A', '201-created'],
-      ]);
-      const encoded = encodeURIComponent(syncData);
-      const cookieString = `mocking_gui_sync=${encoded}`;
+  describe('v2 format', () => {
+    it('restores default type and variant for a hash-only entry', () => {
+      const result = reconstructHandlerConfigsFromCookie(
+        `mocking_gui_sync=v2~${hash(manualHandler)}~${hash(swaggerHandler)}~${hash(autoHandler)}`,
+        handlers,
+      );
 
-      const result = reconstructHandlerConfigsFromCookie(cookieString, baseConfigs);
+      expect(result[key(manualHandler)]).toMatchObject({
+        active: true,
+        type: HandlerType.MANUAL,
+        variant: '200-default',
+      });
+      expect(result[key(swaggerHandler)]).toMatchObject({
+        active: true,
+        type: HandlerType.SWAGGER,
+        variant: '200',
+      });
+      expect(result[key(autoHandler)]).toMatchObject({ active: true, type: HandlerType.AUTO });
+      expect(result[key(dualHandler)]).toBeUndefined();
+    });
+
+    it('applies an explicit variant and keeps the default type', () => {
+      const result = reconstructHandlerConfigsFromCookie(
+        `mocking_gui_sync=v2~${hash(manualHandler)}..400-error`,
+        handlers,
+      );
+
+      expect(result[key(manualHandler)]).toMatchObject({
+        active: true,
+        type: HandlerType.MANUAL,
+        variant: '400-error',
+      });
+    });
+
+    it('applies an explicit type and variant', () => {
+      const result = reconstructHandlerConfigsFromCookie(
+        `mocking_gui_sync=v2~${hash(dualHandler)}.S.200`,
+        handlers,
+      );
+
+      expect(result[key(dualHandler)]).toMatchObject({
+        active: true,
+        type: HandlerType.SWAGGER,
+        variant: '200',
+      });
+    });
+
+    it('decodes a marked base64url variant', () => {
+      const result = reconstructHandlerConfigsFromCookie(
+        `mocking_gui_sync=v2~${hash(manualHandler)}..!YX5iLmMgZCDtlZzquIA`,
+        handlers,
+      );
+
+      expect(result[key(manualHandler)]?.variant).toBe('a~b.c d 한글');
+    });
+
+    it('treats an explicit empty variant as no variant', () => {
+      const result = reconstructHandlerConfigsFromCookie(
+        `mocking_gui_sync=v2~${hash(manualHandler)}..`,
+        handlers,
+      );
+
+      expect(result[key(manualHandler)]).toMatchObject({ active: true, variant: undefined });
+    });
+
+    it('ignores hashes that match no registered handler with one aggregated warning', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const result = reconstructHandlerConfigsFromCookie(
+        `mocking_gui_sync=v2~zzzzz1~zzzzz2~zzzzz3~${hash(manualHandler)}`,
+        handlers,
+      );
+
+      expect(Object.keys(result)).toEqual([key(manualHandler)]);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toContain('Ignored 3');
+    });
+
+    it('warns about the same unknown hashes only once per process', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const cookie = `mocking_gui_sync=v2~yyyyy1~yyyyy2~${hash(manualHandler)}`;
+
+      reconstructHandlerConfigsFromCookie(cookie, handlers);
+      reconstructHandlerConfigsFromCookie(cookie, handlers);
+      reconstructHandlerConfigsFromCookie(`mocking_gui_sync=v2~yyyyy3`, handlers);
+
+      const messages = warnSpy.mock.calls.map(call => String(call[0]));
+      expect(messages.filter(message => message.includes('yyyyy1'))).toHaveLength(1);
+      expect(messages.filter(message => message.includes('yyyyy3'))).toHaveLength(1);
+    });
+
+    it('skips only the malformed entry and keeps the rest', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const result = reconstructHandlerConfigsFromCookie(
+        `mocking_gui_sync=v2~${hash(manualHandler)}..!***~${hash(swaggerHandler)}`,
+        handlers,
+      );
+
+      expect(result[key(manualHandler)]).toBeUndefined();
+      expect(result[key(swaggerHandler)]?.active).toBe(true);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toContain('malformed');
+    });
+
+    it('reads the v2 cookie among other cookies', () => {
+      const result = reconstructHandlerConfigsFromCookie(
+        `session=abc; mocking_gui_sync=v2~${hash(manualHandler)}; theme=dark`,
+        handlers,
+      );
+
+      expect(result[key(manualHandler)]?.active).toBe(true);
+    });
+
+    it('returns an empty config for an empty v2 payload', () => {
+      expect(reconstructHandlerConfigsFromCookie('mocking_gui_sync=v2~', handlers)).toEqual({});
+    });
+  });
+
+  describe('legacy v1 format (cookies left by older versions)', () => {
+    it('reads a legacy single cookie', () => {
+      const result = reconstructHandlerConfigsFromCookie(
+        `mocking_gui_sync=${legacy([
+          ['GET./users', 'M', '200-success'],
+          ['POST./users', 'A', '201-created'],
+        ])}`,
+        handlers,
+      );
 
       expect(result['GET./users']).toEqual({
         active: true,
@@ -42,257 +197,93 @@ describe('reconstructHandlerConfigsFromCookie', () => {
       });
     });
 
-    it('should handle missing cookie gracefully', () => {
-      const cookieString = 'other_cookie=value';
-      const result = reconstructHandlerConfigsFromCookie(cookieString, baseConfigs);
-
-      expect(result).toEqual(baseConfigs);
-    });
-
-    it('should merge with base configs', () => {
-      const syncData = JSON.stringify([['GET./users', 'M', '400-error']]);
-      const encoded = encodeURIComponent(syncData);
-      const cookieString = `mocking_gui_sync=${encoded}`;
-
-      const result = reconstructHandlerConfigsFromCookie(cookieString, baseConfigs);
-
-      // Synced config
-      expect(result['GET./users'].variant).toBe('400-error');
-
-      // Base config preserved
-      expect(result['GET./users'].active).toBe(true);
-    });
-  });
-
-  describe('Multi-Cookie Support (NEW)', () => {
-    it('should reconstruct state from multiple cookies', () => {
-      // Simulate: Full JSON array split across multiple cookies
-      // This matches the actual syncMultiCookie behavior
-      const fullData = JSON.stringify([
+    it('reads legacy chunk cookies in order', () => {
+      const encoded = legacy([
         ['GET./api-1', 'M', '200'],
         ['GET./api-2', 'M', '200'],
-        ['GET./api-3', 'M', '200'],
-        ['GET./api-4', 'M', '200'],
+        ['GET./api-3', 'S', '200'],
       ]);
-      const encoded = encodeURIComponent(fullData);
+      const cookieString = `mocking_gui_sync_0=${encoded.substring(0, 40)}; mocking_gui_sync_1=${encoded.substring(40)}`;
 
-      // Simulate splitting at 50 chars per cookie (for testing, normally 3000)
-      const part1 = encoded.substring(0, 50);
-      const part2 = encoded.substring(50);
+      const result = reconstructHandlerConfigsFromCookie(cookieString, handlers);
 
-      // Verify: Parts are valid when concatenated
-      expect(part1 + part2).toBe(encoded);
-
-      // Simulate: mocking_gui_sync_0 and mocking_gui_sync_1 cookies
-      const cookieString = `mocking_gui_sync_0=${part1}; mocking_gui_sync_1=${part2}`;
-
-      const result = reconstructHandlerConfigsFromCookie(cookieString, {});
-
-      // Verify: All handlers reconstructed (because parts are concatenated correctly)
-      expect(result['GET./api-1']).toBeDefined();
-      expect(result['GET./api-2']).toBeDefined();
-      expect(result['GET./api-3']).toBeDefined();
-      expect(result['GET./api-4']).toBeDefined();
+      expect(Object.keys(result)).toEqual(['GET./api-1', 'GET./api-2', 'GET./api-3']);
+      expect(result['GET./api-3'].type).toBe(HandlerType.SWAGGER);
     });
 
-    it('should handle mixed single and multi-cookies (fallback)', () => {
-      // When single cookie exists, multi-cookie should be ignored
-      const singleData = JSON.stringify([['GET./users', 'M', '200']]);
-      const singleEncoded = encodeURIComponent(singleData);
+    it('prefers chunks over a stale single cookie when both exist (issue #45 defect 2)', () => {
+      const cookieString = `mocking_gui_sync=${legacy([['GET./stale', 'M', '200']])}; mocking_gui_sync_0=${legacy([['GET./fresh', 'M', '200']])}`;
 
-      const multiData = JSON.stringify([['GET./other', 'M', '200']]);
-      const multiEncoded = encodeURIComponent(multiData);
+      const result = reconstructHandlerConfigsFromCookie(cookieString, handlers);
 
-      const cookieString = `mocking_gui_sync=${singleEncoded}; mocking_gui_sync_0=${multiEncoded}`;
+      expect(result['GET./fresh']).toBeDefined();
+      expect(result['GET./stale']).toBeUndefined();
+    });
 
-      const result = reconstructHandlerConfigsFromCookie(cookieString, {});
+    it('prefers a v2 single cookie over leftover legacy chunks', () => {
+      const cookieString = `mocking_gui_sync_0=${legacy([['GET./stale', 'M', '200']])}; mocking_gui_sync=v2~${hash(manualHandler)}`;
 
-      // Should use single cookie (preferred over multi-cookie)
-      expect(result['GET./users']).toBeDefined();
-      // Multi-cookie should NOT be used (single cookie takes precedence)
-      expect(result['GET./other']).toBeUndefined();
+      const result = reconstructHandlerConfigsFromCookie(cookieString, handlers);
+
+      expect(result[key(manualHandler)]).toBeDefined();
+      expect(result['GET./stale']).toBeUndefined();
+    });
+
+    it('maps unknown type characters to Swagger', () => {
+      const result = reconstructHandlerConfigsFromCookie(
+        `mocking_gui_sync=${legacy([['h', 'X', 'v']])}`,
+        handlers,
+      );
+
+      expect(result['h'].type).toBe(HandlerType.SWAGGER);
+    });
+
+    it('skips entries without key or type with a warning', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const encoded = encodeURIComponent(
+        JSON.stringify([
+          ['valid_key', 'M', 'variant'],
+          [null, 'M', 'variant'],
+          ['valid_key2', null, 'variant'],
+        ]),
+      );
+
+      const result = reconstructHandlerConfigsFromCookie(`mocking_gui_sync=${encoded}`, handlers);
+
+      expect(result['valid_key']).toBeDefined();
+      expect(result['valid_key2']).toBeUndefined();
+      expect(warnSpy).toHaveBeenCalled();
     });
   });
 
-  describe('Type Handling', () => {
-    it('should correctly map type characters', () => {
-      const syncData = JSON.stringify([
-        ['handler1', 'M', 'variant1'], // Manual
-        ['handler2', 'A', 'variant2'], // Auto
-        ['handler3', 'S', 'variant3'], // Swagger
-        ['handler4', 'X', 'variant4'], // Unknown (default to Swagger)
-      ]);
-      const encoded = encodeURIComponent(syncData);
-      const cookieString = `mocking_gui_sync=${encoded}`;
-
-      const result = reconstructHandlerConfigsFromCookie(cookieString);
-
-      expect(result['handler1'].type).toBe(HandlerType.MANUAL);
-      expect(result['handler2'].type).toBe(HandlerType.AUTO);
-      expect(result['handler3'].type).toBe(HandlerType.SWAGGER);
-      expect(result['handler4'].type).toBe(HandlerType.SWAGGER); // Unknown defaults to SWAGGER
+  describe('error handling', () => {
+    it('returns an empty config when no sync cookie is present', () => {
+      expect(reconstructHandlerConfigsFromCookie('other_cookie=value', handlers)).toEqual({});
+      expect(reconstructHandlerConfigsFromCookie('', handlers)).toEqual({});
     });
-  });
 
-  describe('Error Handling', () => {
-    it('should handle invalid JSON gracefully', () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    it('returns an empty config and logs on invalid legacy JSON', () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      const cookieString = `mocking_gui_sync=${encodeURIComponent('invalid json')}`;
-      const result = reconstructHandlerConfigsFromCookie(cookieString, baseConfigs);
+      const result = reconstructHandlerConfigsFromCookie(
+        `mocking_gui_sync=${encodeURIComponent('invalid json')}`,
+        handlers,
+      );
 
-      // Should return base configs on error
-      expect(result).toEqual(baseConfigs);
-
-      // Should log error
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(result).toEqual({});
+      expect(errorSpy).toHaveBeenCalledWith(
         expect.stringContaining('Failed to parse'),
         expect.any(Error),
       );
-
-      consoleSpy.mockRestore();
     });
 
-    it('should handle corrupted cookie gracefully', () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    it('returns an empty config and logs on a corrupted cookie', () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      // Simulate corrupted data
-      const cookieString = `mocking_gui_sync=%FF%FE%FD`; // Invalid UTF-8 sequences
+      const result = reconstructHandlerConfigsFromCookie('mocking_gui_sync=%FF%FE%FD', handlers);
 
-      const result = reconstructHandlerConfigsFromCookie(cookieString, baseConfigs);
-
-      // Should return base configs (not crash)
-      expect(result).toBeDefined();
-      expect(consoleSpy).toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
-    });
-
-    it('should validate entries before processing', () => {
-      const syncData = JSON.stringify([
-        ['valid_key', 'M', 'variant'],
-        [null, 'M', 'variant'], // Invalid: null key
-        ['valid_key2', null, 'variant'], // Invalid: null type
-      ]);
-      const encoded = encodeURIComponent(syncData);
-      const cookieString = `mocking_gui_sync=${encoded}`;
-
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-      const result = reconstructHandlerConfigsFromCookie(cookieString, baseConfigs);
-
-      // Should skip invalid entries with warning
-      expect(result['valid_key']).toBeDefined();
-      expect(result['valid_key2']).toBeUndefined(); // Skipped due to null type
-
-      expect(consoleSpy).toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
-    });
-  });
-
-  describe('SSR Integration', () => {
-    it('should enable immediate SSR state consistency (no 300ms delay)', () => {
-      // Simulate: State changes at t=0, SSR reads at t=50ms
-      const syncData = JSON.stringify([['GET./users', 'M', 'new-variant']]);
-      const encoded = encodeURIComponent(syncData);
-      const cookieString = `mocking_gui_sync=${encoded}`;
-
-      // This call should complete immediately (no debounce delay)
-      const startTime = performance.now();
-      const result = reconstructHandlerConfigsFromCookie(cookieString);
-      const endTime = performance.now();
-
-      // Verify: Complete in < 5ms (not waiting 300ms)
-      expect(endTime - startTime).toBeLessThan(5);
-
-      // Verify: Latest state is available
-      expect(result['GET./users'].variant).toBe('new-variant');
-    });
-
-    it('should support 100+ handlers without overflow', () => {
-      // Generate large state (100+ handlers)
-      const entries = Array.from({ length: 100 }, (_, i) => [
-        `GET./endpoint-${i}`,
-        'M',
-        `200-variant-${i}`,
-      ]);
-
-      // Create full JSON and split at chunk boundary
-      const fullData = JSON.stringify(entries);
-      const encoded = encodeURIComponent(fullData);
-
-      // Simulate splitting into multiple cookies
-      // Use fixed chunk size (real code uses 3000 bytes)
-      const chunkSize = 100;
-      const part1 = encoded.substring(0, chunkSize);
-      const part2 = encoded.substring(chunkSize);
-
-      const cookieString = `mocking_gui_sync_0=${part1}; mocking_gui_sync_1=${part2}`;
-
-      const result = reconstructHandlerConfigsFromCookie(cookieString);
-
-      // Verify: All 100 handlers reconstructed
-      for (let i = 0; i < 100; i++) {
-        expect(result[`GET./endpoint-${i}`]).toBeDefined();
-        expect(result[`GET./endpoint-${i}`].variant).toBe(`200-variant-${i}`);
-      }
-    });
-  });
-
-  describe('Logging and Observability', () => {
-    it('should log success with handler count', () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
-      const syncData = JSON.stringify([
-        ['handler1', 'M', 'variant1'],
-        ['handler2', 'M', 'variant2'],
-      ]);
-      const encoded = encodeURIComponent(syncData);
-      const cookieString = `mocking_gui_sync=${encoded}`;
-
-      reconstructHandlerConfigsFromCookie(cookieString);
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Server-side state reconstructed'),
-        expect.objectContaining({ count: 2 }),
-      );
-
-      consoleSpy.mockRestore();
-    });
-
-    it('should indicate multi-cookie vs single-cookie source', () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
-      // Multi-cookie data: large enough to indicate multi-cookie source
-      const largeData = JSON.stringify(Array.from({ length: 100 }, (_, i) => [`h${i}`, 'M', 'v']));
-      const encoded = encodeURIComponent(largeData);
-
-      // Split at 2500 bytes to ensure source indicator says 'multi-cookie' (> 3000 chars check)
-      // Actually, the source check is: syncData.length > 3000 ? 'multi-cookie' : 'single-cookie'
-      // So for multi-cookie, we need syncData.length > 3000
-      // Let's create data that when split and re-joined is > 3000 chars
-
-      const chunkSize = 2000;
-      const part1 = encoded.substring(0, chunkSize);
-      const part2 = encoded.substring(chunkSize);
-
-      const fullReconstructed = part1 + part2; // This should be > 3000 for multi-cookie indicator
-      expect(fullReconstructed.length).toBeGreaterThan(3000);
-
-      const cookieString = `mocking_gui_sync_0=${part1}; mocking_gui_sync_1=${part2}`;
-
-      reconstructHandlerConfigsFromCookie(cookieString);
-
-      const logCall = consoleSpy.mock.calls.find(call =>
-        call[0]?.includes('Server-side state reconstructed'),
-      );
-
-      // Verify log was called with source indicator
-      expect(logCall).toBeDefined();
-      expect(logCall?.[1]).toMatchObject(expect.objectContaining({ source: 'multi-cookie' }));
-
-      consoleSpy.mockRestore();
+      expect(result).toEqual({});
+      expect(errorSpy).toHaveBeenCalled();
     });
   });
 });

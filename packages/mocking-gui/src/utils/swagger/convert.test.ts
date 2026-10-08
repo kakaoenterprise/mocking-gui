@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { convertSwaggerToHandlers } from './convert';
 import type { OpenAPI } from './convert';
 
@@ -268,6 +268,76 @@ describe('convertSwaggerToHandlers - Swagger Response Variants', () => {
         `${portBaseUrl}/v1/status`,
         `${portBaseUrl}/v1/:id`,
       ]);
+    });
+  });
+
+  describe('methods MSW cannot register', () => {
+    it('skips a method MSW has no factory for instead of throwing', () => {
+      const baseUrl = 'https://api.example.com';
+      const swagger: OpenAPI = {
+        swagger: '2.0',
+        paths: {
+          // `trace` is not hypothetical: httpbin's published document uses it,
+          // and http.trace is undefined, so converting used to throw and take
+          // the whole handler pass — and the host app — down with it.
+          '/anything': {
+            get: { responses: { '200': { description: 'ok' } } },
+            trace: { responses: { '200': { description: 'traced' } } },
+          },
+        },
+      };
+
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      expect(() => convertSwaggerToHandlers(baseUrl, swagger)).not.toThrow();
+
+      const handlers = convertSwaggerToHandlers(baseUrl, swagger);
+      expect(handlers).toHaveLength(1);
+      expect(handlers[0].method).toBe('get');
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('TRACE /anything'));
+
+      warn.mockRestore();
+    });
+
+    it('accepts an uppercase method key', () => {
+      const swagger: OpenAPI = {
+        openapi: '3.0.0',
+        paths: { '/v1/a': { GET: { responses: { '200': { description: 'ok' } } } } },
+      } as unknown as OpenAPI;
+
+      const handlers = convertSwaggerToHandlers('https://api.example.com', swagger);
+      expect(handlers).toHaveLength(1);
+      expect(handlers[0].method).toBe('get');
+    });
+  });
+
+  describe('statuses a Response cannot carry', () => {
+    it('drops a 1xx variant rather than leaving one that throws when selected', () => {
+      const swagger: OpenAPI = {
+        swagger: '2.0',
+        paths: {
+          // httpbin documents /status/{codes} starting at 100, and a 1xx variant
+          // would be both unusable and the default the handler activates with.
+          '/status/{codes}': {
+            get: {
+              responses: {
+                '100': { description: 'Informational responses' },
+                '200': { description: 'Success' },
+                '500': { description: 'Server Errors' },
+              },
+            },
+          },
+        },
+      };
+
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const [handler] = convertSwaggerToHandlers('https://httpbin.org', swagger);
+
+      expect(handler.swaggerResponseVariants?.map(variant => variant.status)).toEqual([200, 500]);
+      expect(handler.swaggerResponseVariants?.[0].name).toBe('Success');
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('"100"'));
+
+      warn.mockRestore();
     });
   });
 });

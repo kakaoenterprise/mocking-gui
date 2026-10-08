@@ -2,6 +2,7 @@ import { setupServer } from 'msw/node';
 import { MockingServerConfig as MockingServerConfig } from '@mocking-gui-types/config';
 
 import { reconstructHandlerConfigsFromCookie } from './state';
+import { isDomRuntime, isNodeRuntime } from '../common/runtime';
 import { convertToMswHandler } from '../handler/convertToMsw';
 import { loadSwaggerHandlers } from '../swagger/load';
 import { mergeHandlersWithSwagger } from '../swagger/merge';
@@ -23,7 +24,7 @@ export const createMockingServer = async (
   const finalHandlers = mergeHandlersWithSwagger([...mocks], swaggerHandlers);
 
   const finalConfigs: Record<string, StoredHandlerVariants> = cookie
-    ? reconstructHandlerConfigsFromCookie(cookie, {})
+    ? reconstructHandlerConfigsFromCookie(cookie, finalHandlers)
     : {};
 
   const mswHandlers = convertToMswHandler(finalHandlers, finalConfigs);
@@ -55,7 +56,10 @@ const loadSwaggerHandlersSafe = async (source: { configUrl: string; serverUrl?: 
 export default async function setupMockingServer(
   config: MockingServerConfig = {},
 ): Promise<SetupServer | null> {
-  if (typeof window !== 'undefined') {
+  if (isDomRuntime() && !isNodeRuntime()) {
+    console.warn(
+      '[MockingGUI Server] setupMockingServer was skipped: a browser (DOM) runtime without Node.js was detected. If this is a server-side or Node-based test environment (jsdom/happy-dom), please report it to the project issue tracker.',
+    );
     return null;
   }
   return createMockingServer(config);

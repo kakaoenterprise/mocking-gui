@@ -23,6 +23,27 @@ export type MockingConfig = {
    * is unreachable.
    */
   onDemandHandlers?: RequestHandler[];
+  /**
+   * Scenario codes to seed the panel with — the same base64 strings the share
+   * button produces and the import box accepts.
+   *
+   * Seeding merges with whatever is already persisted: a code whose scenario id
+   * is already saved is left untouched, so a visitor's own edits survive a
+   * reload. Seeding never activates a scenario either — which one is active is
+   * read from the persisted state, so the panel stays in charge of that.
+   *
+   * An unreadable code is reported and skipped; the rest still load.
+   */
+  scenarios?: string[];
+  /**
+   * Whether the panel state is mirrored into the `mocking_gui_sync` cookie that
+   * `setupMockingServer` reads. Defaults to `true`.
+   *
+   * Set to `false` in browser-only projects that never call
+   * `setupMockingServer`: the cookie is then not written, and any
+   * `mocking_gui_sync*` cookie left by an earlier version is removed.
+   */
+  ssrSync?: boolean;
 };
 
 export type MockingServerConfig = {
@@ -32,12 +53,17 @@ export type MockingServerConfig = {
    */
 
   cookie?: string | null;
-} & Omit<MockingConfig, 'method' | 'url' | 'name'>;
+} & Omit<MockingConfig, 'method' | 'url' | 'name' | 'ssrSync'>;
 
 /** Handler Config Options */
 export interface HandlerConfigOption {
   name: string;
   description?: string;
+  /**
+   * URL to intercept. `:name` at the start of a path segment is a path parameter;
+   * any other colon in the path is a literal (e.g. `/subscriptions/:id:cancel`).
+   * Literal colons are escaped for MSW automatically — do not write `\:`.
+   */
   url: string;
   method: keyof typeof http;
   /**
