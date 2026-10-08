@@ -33,7 +33,7 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: main
 
@@ -49,7 +49,7 @@ jobs:
         run: pnpm --filter @kakaocloud/mocking-gui build
 
       - name: Upload package dist
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mocking-gui-dist
           path: packages/mocking-gui/dist
@@ -65,7 +65,7 @@ jobs:
       contents: write # push version commit + tag, create GitHub Release
       id-token: write # npm provenance
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0 # release-it needs tags to compute the changelog range
@@ -75,7 +75,7 @@ jobs:
 
       # package.json#files is ["dist"], so this is the whole published payload.
       - name: Download package dist
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: mocking-gui-dist
           path: packages/mocking-gui/dist
