@@ -182,6 +182,7 @@ variant := `[A-Za-z0-9_-]*` 이면 그대로, 아니면 `!` + base64url(UTF-8) �
 
 - 2026-10-08: 이슈 #45 분석. 실제 소스 기반 재현 스크립트로 결함 1·2·3 확인, 페이로드 크기 5 종 비교 측정. 임시 테스트 파일은 삭제(레포 변경 없음). 구현 브랜치는 승인 후 생성 예정(동시 작업 보호).
 
+- 2026-10-08 (PR): upstream/main 1067c60(v1.0.7 + #46) 위로 rebase, INDEX.md·troubleshooting.md 충돌 해결, ADR 번호 0007→0008(동시 진행 PR #22 가 0007 사용). PR https://github.com/kakaoenterprise/mocking-gui/pull/47 생성, 인라인 코멘트 3건.
 - 2026-10-08 (Phase 2, 구현): TDD — 실패 테스트 29건 선작성 후 구현.
   - 신규 `utils/common/syncFormat.ts`: 쿠키 이름·예산(3800)·`v2|` 접두·구분자·type↔char 매핑·`getCookie`/`listCookieNames` 공용화
   - `utils/common/keys.ts`: `hashHandlerKey` (fnv1a-32 → base36) 추가
