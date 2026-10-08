@@ -1,68 +1,1104 @@
-:root {
-  --vp-c-brand-1: #000000;
-  --vp-c-brand-2: #333333;
-  --vp-c-brand-3: #666666;
-  --vp-c-brand-soft: #f4f4f4;
+/**
+ * Mocking GUI documentation — visual system.
+ *
+ * The product is a control panel: a list of endpoints, each a row carrying a
+ * method, a chosen response and a switch. Every decision below comes from that
+ * noun rather than from taste.
+ *
+ *   Rules, not cards.   Structure is drawn with 1px lines dividing full-bleed
+ *                       cells. No radii, no shadows, anywhere.
+ *   Mono is a voice.    Methods, paths, statuses and variant names are the
+ *                       product's own alphabet, so monospace appears in prose
+ *                       and in chrome, not only inside code fences.
+ *   Colour means state. Neutrals carry the page; the one chromatic axis is the
+ *                       status class, used only where state is being shown.
+ */
 
-  --vp-font-family-base: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
-  --vp-font-family-mono: "JetBrains Mono", source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+/* ── tokens ─────────────────────────────────────────────────────────── */
+
+:root {
+  --mg-paper: #fcfcfb;
+  --mg-paper-sunk: #f4f3f0;
+  --mg-ink: #1c1b18;
+  --mg-ink-soft: #3d3b36;
+  --mg-muted: #6b6862;
+  --mg-faint: #9a968e;
+  --mg-rule: #e4e2dd;
+  --mg-rule-strong: #d3d0c9;
+
+  /* the one chromatic axis: response status */
+  --mg-ok: #0f7a52;
+  --mg-warn: #9a6b05;
+  --mg-bad: #b23a3a;
+
+  --vp-c-bg: var(--mg-paper);
+  --vp-c-bg-alt: var(--mg-paper);
+  --vp-c-bg-soft: var(--mg-paper-sunk);
+  --vp-c-bg-elv: var(--mg-paper);
+
+  --vp-c-text-1: var(--mg-ink);
+  --vp-c-text-2: var(--mg-ink-soft);
+  --vp-c-text-3: var(--mg-muted);
+
+  --vp-c-divider: var(--mg-rule);
+  --vp-c-gutter: var(--mg-rule);
+  --vp-c-border: var(--mg-rule);
+
+  --vp-c-brand-1: var(--mg-ink);
+  --vp-c-brand-2: var(--mg-ink-soft);
+  --vp-c-brand-3: var(--mg-muted);
+  --vp-c-brand-soft: var(--mg-paper-sunk);
+
+  --vp-font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --vp-font-family-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --vp-layout-max-width: 1420px;
+  --vp-sidebar-width: 268px;
+  --vp-nav-height: 60px;
+
+  --vp-button-brand-bg: var(--mg-ink);
+  --vp-button-brand-border: var(--mg-ink);
+  --vp-button-brand-text: var(--mg-paper);
+  --vp-button-brand-hover-bg: var(--mg-ink-soft);
+  --vp-button-brand-hover-border: var(--mg-ink-soft);
+  --vp-button-brand-hover-text: var(--mg-paper);
+  --vp-button-brand-active-bg: var(--mg-ink);
+  --vp-button-brand-active-border: var(--mg-ink);
+
+  --vp-button-alt-bg: transparent;
+  --vp-button-alt-border: var(--mg-rule-strong);
+  --vp-button-alt-text: var(--mg-ink);
+  --vp-button-alt-hover-bg: transparent;
+  --vp-button-alt-hover-border: var(--mg-ink);
+  --vp-button-alt-hover-text: var(--mg-ink);
+
+  --mg-measure: 68ch;
+  --mg-gutter: 24px;
+  --mg-fast: 120ms;
+  --mg-slow: 200ms;
 }
 
 .dark {
-  --vp-c-brand-1: #ffffff;
-  --vp-c-brand-2: #e5e5e5;
-  --vp-c-brand-3: #cccccc;
-  --vp-c-brand-soft: #1a1a1a;
+  --mg-paper: #14140f;
+  --mg-paper-sunk: #1c1c16;
+  --mg-ink: #ebe9e2;
+  --mg-ink-soft: #c6c3ba;
+  --mg-muted: #8e8a80;
+  --mg-faint: #6b675e;
+  --mg-rule: #2b2a23;
+  --mg-rule-strong: #3b392f;
+
+  --mg-ok: #4ec08c;
+  --mg-warn: #d2a03f;
+  --mg-bad: #e0736f;
+
+  --vp-c-brand-1: var(--mg-ink);
+  --vp-c-brand-2: var(--mg-ink-soft);
+  --vp-c-brand-3: var(--mg-muted);
+  --vp-c-brand-soft: var(--mg-paper-sunk);
 }
 
-/* Next.js style customization */
-.vp-doc h1 {
-  font-weight: 800;
+/* Nothing in this system is rounded or raised. Stated once, rather than
+   unset on each component the theme ships. */
+.VPNav,
+.VPNavBar,
+.VPSidebar,
+.VPContent,
+.VPDoc,
+.vp-doc div[class*='language-'],
+.vp-doc table,
+.vp-doc img,
+.custom-block,
+.VPButton,
+.DocSearch-Button,
+.VPNavBarSearchButton,
+.VPLocalSearchBox,
+.VPMenu,
+.DocSearch-Button-Key,
+.vp-doc img {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/**
+ * Overlays are the one place a rule has to do a shadow's job.
+ *
+ * The reset above squares the search modal and the nav flyout and takes their
+ * shadow, which is correct for the system but leaves them with the page's own
+ * background and no edge — they open, and look like nothing happened. Both get
+ * an explicit surface and a strong rule so they read as something laid over the
+ * page rather than printed into it.
+ */
+.VPLocalSearchBox .shell,
+.VPMenu {
+  background: var(--mg-paper) !important;
+  border: 1px solid var(--mg-rule-strong);
+}
+
+.VPLocalSearchBox .backdrop {
+  background: color-mix(in srgb, var(--mg-ink) 42%, transparent);
+}
+
+/**
+ * The appearance toggle keeps its pill.
+ *
+ * Squaring every corner is the reference's form, not our principle — ours is
+ * that surfaces are drawn with rules. A switch is a control, and controls in
+ * this product are pills: the panel is full of them. Forcing this one into a
+ * rectangle would read as broken and would contradict the noun the rest of the
+ * system is built on.
+ */
+
+/* ── chrome: the rule is the structure ──────────────────────────────── */
+
+.VPNavBar {
+  border-bottom: 1px solid var(--mg-rule);
+  background: var(--mg-paper);
+}
+
+.VPNavBar.has-sidebar .content,
+.VPNavBar .divider {
+  background: transparent;
+  border: 0;
+}
+
+.VPNavBar .title {
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 
-.vp-doc h2 {
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  border-bottom: none;
+.VPNavBarMenuLink {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
-.vp-doc p {
-  line-height: 1.7;
-}
-
-.custom-block.tip {
-  border-color: var(--vp-c-brand-1);
-  background-color: var(--vp-c-brand-soft);
-}
-
-.custom-block.warning {
-  border-color: #f5a623;
-  background-color: rgba(245, 166, 35, 0.1);
-}
-
-.custom-block.danger {
-  border-color: #d0021b;
-  background-color: rgba(208, 2, 27, 0.1);
-}
-
-/* Sidebar styling */
 .VPSidebar {
-  background-color: var(--vp-c-bg);
-  border-right: 1px solid var(--vp-c-divider);
+  border-right: 1px solid var(--mg-rule);
+  background: var(--mg-paper);
 }
 
-.VPSidebarItem.level-0 {
+@media (min-width: 960px) {
+  /* VitePress ships this component with a scoped style, so `.VPSidebar[data-v-x]`
+     outweighs a bare class; `.Layout` restores the tie and source order settles
+     it. Its 60px top padding is exactly the nav height, which leaves the first
+     group sitting on the nav's rule. */
+  .Layout .VPSidebar {
+    padding: 82px 32px 96px 40px;
+  }
+}
+
+/**
+ * The sidebar is the page's own handler list.
+ *
+ * The product is a stack of rows against a rail, and the aside already marks
+ * your position on one; the sidebar does the same on the other side, so both
+ * edges of the page use a single device. That also fixes two defects: the row
+ * label is a `p.text`, not the `.link-text` this file used to target, so the
+ * muted colour never applied and the active row had nothing to stand out
+ * against — and the untouched default left every row 42px tall.
+ */
+
+/* Group heading: a rule above it, the label tight to its own rows. */
+/* `.VPSidebar` qualifies these so they outweigh the component's own scoped
+   `.VPSidebarItem.level-0[data-v-x]`, which keeps a 24px tail under the last
+   row of every group — a gap the rule below it then repeats. */
+.VPSidebar .VPSidebarItem.level-0 {
+  padding-bottom: 0;
+  margin-bottom: 0;
+  border-bottom: 0;
+}
+
+.VPSidebarItem.level-0 > .item {
+  padding: 0;
+  margin: 26px 0 8px;
+  border-top: 1px solid var(--mg-rule);
+  padding-top: 24px;
+}
+
+/* The default theme divides groups with its own rule and padding; with the one
+   above that makes two lines per boundary. */
+.VPSidebar .group {
+  padding-top: 0;
+}
+
+.VPSidebar .group + .group {
+  border-top: 0;
+}
+
+/* `nav` opens with a `span.visually-hidden`, so the first group is not
+   `:first-child` and the top rule has to be removed by name. */
+.VPSidebar .visually-hidden + .group .VPSidebarItem.level-0 > .item {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.VPSidebarItem.level-0 > .item > .text {
+  font-family: var(--vp-font-family-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mg-faint);
+  padding: 0;
+}
+
+/* The rail the rows hang off. */
+.VPSidebarItem.level-0 > .items {
+  border-left: 1px solid var(--mg-rule);
+}
+
+.VPSidebarItem.level-1 > .item {
+  position: relative;
+}
+
+.VPSidebarItem.level-1 .link {
+  padding: 0;
+}
+
+.VPSidebarItem.level-1 .link > .text {
+  padding: 6px 0 6px 14px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--mg-muted);
+  transition: color var(--mg-fast) linear;
+}
+
+/* Position on the rail, the same mark the outline uses on the other side. */
+.VPSidebarItem.level-1 > .item::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: -1px;
+  width: 2px;
+  background: transparent;
+  transition: background-color var(--mg-fast) linear;
+}
+
+.VPSidebarItem.level-1 .link:hover > .text {
+  color: var(--mg-ink);
+}
+
+.VPSidebarItem.level-1:hover > .item::before {
+  background: var(--mg-rule-strong);
+}
+
+/* Selected: the mark, the ink and a band that runs out to the sidebar edge —
+   the complaint was that one signal on its own went unnoticed. */
+.VPSidebarItem.level-1.is-active > .item {
+  background: var(--mg-paper-sunk);
+  margin-right: -32px;
+  padding-right: 32px;
+}
+
+.VPSidebarItem.level-1.is-active > .item::before,
+.VPSidebarItem.level-1.is-active:hover > .item::before {
+  background: var(--mg-ink);
+}
+
+.VPSidebarItem.level-1.is-active .link > .text {
+  color: var(--mg-ink);
   font-weight: 600;
 }
 
-.VPSidebarItem.is-active .text {
-  color: var(--vp-c-brand-1);
+/* ── the page ───────────────────────────────────────────────────────── */
+
+.VPDoc {
+  padding-top: 40px;
 }
 
-/* Code block styling */
+.VPDoc .content-container {
+  max-width: var(--mg-measure);
+}
+
+.vp-doc h1 {
+  font-size: clamp(34px, 4.4vw, 46px);
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  padding-bottom: 18px;
+  margin-bottom: 26px;
+  border-bottom: 1px solid var(--mg-rule-strong);
+}
+
+.vp-doc h2 {
+  margin-top: 56px;
+  padding-top: 22px;
+  border-top: 1px solid var(--mg-rule);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.022em;
+}
+
+.vp-doc h3 {
+  margin-top: 34px;
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.012em;
+}
+
+
+.vp-doc p,
+.vp-doc li {
+  font-size: 15px;
+  line-height: 1.72;
+  color: var(--mg-ink-soft);
+}
+
+/* The opening sentence of a page carries more weight than the rest. */
+.vp-doc h1 + p {
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--mg-ink);
+}
+
+.vp-doc a {
+  font-weight: 500;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.vp-doc hr {
+  border-top: 1px solid var(--mg-rule);
+  margin: 44px 0;
+}
+
+.vp-doc ul,
+.vp-doc ol {
+  padding-left: 1.1rem;
+}
+
+.vp-doc li + li {
+  margin-top: 6px;
+}
+
+.vp-doc li::marker {
+  color: var(--mg-faint);
+}
+
+/* ── mono as a voice, not a decoration ──────────────────────────────── */
+
+.vp-doc :not(pre) > code {
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 2px 5px;
+  background: var(--mg-paper-sunk);
+  border: 1px solid var(--mg-rule);
+  color: var(--mg-ink);
+}
+
+/**
+ * A heading that is a symbol name is still a heading.
+ *
+ * The API pages name their sections with backticked identifiers, and the chip
+ * above shrinks those to 12.5px in a grey box — so the one thing a reference
+ * page needs to be scannable, the signature, reads as a passing mention.
+ * Headings keep their size and take the mono voice instead of the box.
+ */
+.vp-doc h2 > code,
+.vp-doc h3 > code,
+.vp-doc h4 > code {
+  font-size: 0.9em;
+  font-weight: inherit;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: inherit;
+}
+
 .vp-doc div[class*='language-'] {
-  border-radius: 8px;
-  border: 1px solid var(--vp-c-divider);
-  background-color: var(--vp-c-bg-alt);
+  border: 1px solid var(--mg-rule);
+  background: var(--mg-paper-sunk);
+  margin: 20px 0;
+}
+
+.vp-doc div[class*='language-'] pre {
+  padding: 16px 0;
+}
+
+.vp-doc div[class*='language-'] code {
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+.vp-doc div[class*='language-'] > span.lang {
+  font-family: var(--vp-font-family-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mg-faint);
+  top: 6px;
+  right: 10px;
+}
+
+.vp-doc [class*='language-'] .line-numbers-wrapper {
+  border-right: 1px solid var(--mg-rule);
+  color: var(--mg-faint);
+}
+
+/* ── tables read as the panel's own rows ────────────────────────────── */
+
+/**
+ * `display: table` is what lets the rule grid span the measure instead of
+ * shrinking to its content — but it is also what the default theme uses as the
+ * table's own scroll container, so below the breakpoint the container has to
+ * come back or a wide table pushes the whole page sideways.
+ */
+.vp-doc table {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+  margin: 22px 0;
+  font-size: 13.5px;
+}
+
+@media (max-width: 768px) {
+  .vp-doc table {
+    display: block;
+    width: max-content;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
+.vp-doc th {
+  font-family: var(--vp-font-family-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mg-faint);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--mg-rule-strong);
+  padding: 8px 12px 8px 0;
+  text-align: left;
+}
+
+.vp-doc td {
+  border: 0;
+  border-bottom: 1px solid var(--mg-rule);
+  padding: 9px 12px 9px 0;
+  background: transparent;
+}
+
+/* The default theme stripes even rows; a filled band and a rule grid cannot
+   both be the structure, and here the rules are. */
+.vp-doc tr,
+.vp-doc tr:nth-child(2n) {
+  background: transparent;
+  border: 0;
+}
+
+/* First column is the row's name, the way a handler row is named by its path. */
+.vp-doc td:first-child {
+  color: var(--mg-ink);
+  font-weight: 500;
+}
+
+/* ── notes: a rule and a label, not a tinted box ────────────────────── */
+
+.custom-block {
+  border: 0;
+  border-left: 2px solid var(--mg-rule-strong);
+  background: transparent;
+  padding: 2px 0 2px 16px;
+  margin: 22px 0;
+}
+
+.custom-block .custom-block-title {
+  font-family: var(--vp-font-family-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mg-faint);
+  margin-bottom: 4px;
+}
+
+.custom-block p {
+  font-size: 14px;
+}
+
+.custom-block.tip {
+  border-left-color: var(--mg-ok);
+}
+.custom-block.tip .custom-block-title {
+  color: var(--mg-ok);
+}
+
+.custom-block.warning {
+  border-left-color: var(--mg-warn);
+}
+.custom-block.warning .custom-block-title {
+  color: var(--mg-warn);
+}
+
+.custom-block.danger {
+  border-left-color: var(--mg-bad);
+}
+.custom-block.danger .custom-block-title {
+  color: var(--mg-bad);
+}
+
+.vp-doc blockquote {
+  border-left: 2px solid var(--mg-rule-strong);
+  padding-left: 16px;
+  color: var(--mg-muted);
+}
+
+/* ── aside ──────────────────────────────────────────────────────────── */
+
+.VPDocAsideOutline .outline-title {
+  font-family: var(--vp-font-family-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mg-faint);
+}
+
+/* A truncated heading is not a usable index entry — several of these pages have
+   headings long enough that the default single line ellipsis hides the part
+   that distinguishes them. */
+.VPDocAsideOutline .outline-link {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--mg-muted);
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  padding: 3px 0;
+  transition: color var(--mg-fast) linear;
+}
+
+.VPDocAsideOutline .outline-link:hover,
+.VPDocAsideOutline .outline-link.active {
+  color: var(--mg-ink);
+}
+
+.VPDocAside .outline-marker {
+  background: var(--mg-ink);
+  width: 2px;
+}
+
+/* ── footer and prev/next as rules ──────────────────────────────────── */
+
+.VPDocFooter {
+  border-top: 1px solid var(--mg-rule);
+  padding-top: 22px;
+  margin-top: 56px;
+}
+
+.VPDocFooter .pager-link {
+  border: 1px solid var(--mg-rule);
+  border-radius: 0;
+  padding: 12px 14px;
+  transition: border-color var(--mg-fast) linear;
+}
+
+.VPDocFooter .pager-link:hover {
+  border-color: var(--mg-ink);
+}
+
+.VPDocFooter .pager-link .desc {
+  font-family: var(--vp-font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mg-faint);
+}
+
+.VPDocFooter .pager-link .title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mg-ink);
+}
+
+/* ── search ─────────────────────────────────────────────────────────── */
+
+.VPNavBarSearchButton,
+.DocSearch-Button {
+  border: 1px solid var(--mg-rule);
+  background: transparent;
+}
+
+/* The button is `width: 100%` of `#local-search`, which the theme leaves at
+   content width — so the field ended up exactly as wide as the word in it.
+   Growing the wrapper is what gives the button something to fill. */
+.VPNavBarSearch > #local-search {
+  flex-grow: 1;
+  max-width: 420px;
+}
+
+.DocSearch-Button-Placeholder {
+  font-size: 13px;
+  color: var(--mg-muted);
+}
+
+.DocSearch-Button-Keys {
+  font-family: var(--vp-font-family-mono);
+}
+
+.VPLocalSearchBox .shell .search-bar {
+  border: 0;
+  border-bottom: 1px solid var(--mg-rule);
+  border-radius: 0;
+  background: transparent;
+  padding: 2px 12px;
+}
+
+.VPLocalSearchBox .shell .search-input {
+  font-size: 15px;
+  padding: 12px 0;
+}
+
+/* The keyboard legend is chrome, so it speaks in the chrome's alphabet. */
+.VPLocalSearchBox .shell .search-keyboard-shortcuts {
+  font-family: var(--vp-font-family-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mg-faint);
+  border-top: 1px solid var(--mg-rule);
+  padding: 8px 12px;
+}
+
+.VPLocalSearchBox .shell .search-keyboard-shortcuts kbd {
+  background: var(--mg-paper-sunk);
+  border: 1px solid var(--mg-rule);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Results are rows, like everything else the product lists. VitePress draws
+   them as rounded outlined cards, which is the one shape this system does not
+   have. */
+.VPLocalSearchBox .shell .result {
+  border: 0;
+  border-bottom: 1px solid var(--mg-rule);
+  border-radius: 0;
+  background: transparent;
+  padding: 10px 12px;
+}
+
+.VPLocalSearchBox .shell .results {
+  padding: 0;
+}
+
+.VPLocalSearchBox .shell .result.selected {
+  background: var(--mg-paper-sunk);
+  border-bottom-color: var(--mg-rule);
+}
+
+.VPLocalSearchBox .shell .titles .title {
+  font-size: 13.5px;
+}
+
+.VPLocalSearchBox .shell .excerpt-wrapper {
+  border-top: 1px solid var(--mg-rule);
+}
+
+.VPLocalSearchBox .shell .excerpt {
+  background: var(--mg-paper-sunk);
+  border-radius: 0;
+}
+
+/* ── buttons ────────────────────────────────────────────────────────── */
+
+.VPButton {
+  border-radius: 0;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  transition:
+    background-color var(--mg-fast) linear,
+    border-color var(--mg-fast) linear;
+}
+
+.VPButton.brand {
+  background: var(--mg-ink);
+  border-color: var(--mg-ink);
+  color: var(--mg-paper);
+}
+
+.VPButton.alt {
+  background: transparent;
+  border: 1px solid var(--mg-rule-strong);
+  color: var(--mg-ink);
+}
+
+.VPButton.alt:hover {
+  border-color: var(--mg-ink);
+  background: transparent;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --mg-gutter: 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ── screenshots sit in the grid, not on top of it ──────────────────── */
+
+.vp-doc img {
+  border: 1px solid var(--mg-rule);
+  display: block;
+}
+
+/* ── home ───────────────────────────────────────────────────────────── */
+
+/**
+ * VitePress ships these components with Vue scoped styles, so their rules carry
+ * an attribute selector and outrank a bare class. Everything below is scoped to
+ * the home wrappers to match that weight rather than fought with `!important`.
+ */
+
+/**
+ * One gutter for the whole page.
+ *
+ * The hero was centred in a 1152px column, the feature grid capped at 1420px
+ * and the prose below at a third width, so each full-width rule ran past the
+ * edges of whatever it was separating. Everything here shares `--mg-gutter`
+ * instead, which also lets the grid use the whole page: on a wide screen its
+ * cells were a strip in the middle with the hero's rule running out past them.
+ */
+/* The page is one centred column, not a full-bleed sheet.
+ *
+ * Hero, grid and prose all start at `--mg-gutter`, which on a wide screen put
+ * them hard against the viewport's left edge while the nav bar stayed centred
+ * in its own 1356px container — the page read as pushed to one side.
+ *
+ * The width below makes this column's *content box* equal that nav container
+ * (`--vp-layout-max-width` - 64px), so the two left edges coincide at every
+ * width: inner = (max-width - 2*gutter) = nav container. Below the breakpoint
+ * neither cap binds and both fall back to the same gutter.
+ */
+.VPHome {
+  max-width: calc(var(--vp-layout-max-width) - 64px + var(--mg-gutter) * 2);
+  margin-inline: auto;
+}
+
+
+.VPHomeHero {
+  /* The display size needs real clearance under a 60px fixed nav, and a
+     line-height of exactly 1 sits cap-height on the box edge. */
+  padding: 96px var(--mg-gutter) 68px !important;
+  border-bottom: 1px solid var(--mg-rule);
+}
+
+.VPHomeHero .container {
+  max-width: none;
+}
+
+.VPHomeHero .name,
+.VPHomeHero .text {
+  font-size: clamp(36px, 5.2vw, 58px);
+  line-height: 1.04;
+  letter-spacing: -0.038em;
+  font-weight: 800;
+  max-width: 16ch;
+}
+
+.VPHomeHero .name {
+  color: var(--mg-ink);
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.VPHomeHero .text {
+  color: var(--mg-muted);
+}
+
+.VPHomeHero .tagline {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--mg-ink-soft);
+  max-width: 48ch;
+  padding-top: 18px;
+}
+
+.VPHomeHero .actions {
+  padding-top: 26px;
+}
+
+/* The hero art is the product's own panel (HeroPanel.vue), not a picture, so
+   the theme's decorative blob and its 32px nudge are removed rather than
+   restyled — this system has no blurred shapes in it. */
+.VPHomeHero .image {
+  order: 3;
+  margin: 0;
+  padding-top: 34px;
+}
+
+.VPHomeHero .image-bg {
+  display: none;
+}
+
+.VPHomeHero .image-container {
+  width: auto;
+  height: auto;
+  transform: none;
+}
+
+@media (min-width: 960px) {
+  .VPHomeHero .image {
+    padding-top: 0;
+  }
+
+  /* The panel is shorter than the column of copy beside it, so it is centred
+     against that column rather than hung from its top edge. This needs the
+     theme's own `height: 100%` back — zeroing it above is what left
+     `align-items` with nothing to centre within. */
+  .VPHomeHero .image-container {
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: flex-end;
+  }
+}
+
+.VPHomeFeatures {
+  padding: 0 !important;
+}
+
+.VPHomeFeatures .container {
+  max-width: none;
+}
+
+.VPHomeFeatures .items {
+  margin: 0;
+}
+
+.VPHomeFeatures .item {
+  padding: 0;
+}
+
+/* Cells of one grid, not a row of floating cards. */
+.VPHomeFeatures .VPFeature {
+  border: 0;
+  border-right: 1px solid var(--mg-rule);
+  border-bottom: 1px solid var(--mg-rule);
+  border-radius: 0;
+  background: transparent;
+  /* Horizontal padding is the page gutter, so the first cell's title sits on
+     the same line as the hero's. */
+  padding: 30px var(--mg-gutter) 34px;
+  transition: background-color var(--mg-fast) linear;
+}
+
+/* The inner `.box` carries 24px of its own, which stacked with the cell's and
+   left every row with a band of nothing above and below its text. */
+.VPHomeFeatures .VPFeature .box {
+  padding: 0;
+}
+
+.VPHomeFeatures .VPFeature:hover {
+  background: var(--mg-paper-sunk);
+  border-color: var(--mg-rule);
+}
+
+.VPHomeFeatures .VPFeature .title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.012em;
+  color: var(--mg-ink);
+}
+
+.VPHomeFeatures .VPFeature .details {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--mg-muted);
+}
+
+@media (min-width: 960px) {
+  /* The rightmost cell of each row must not draw an outer edge. */
+  .VPHomeFeatures .items .item:nth-child(3n) .VPFeature {
+    border-right: 0;
+  }
+}
+
+/* The default theme decorates the feature grid corners; the grid is the
+   decoration here. */
+.VPHomeFeatures .items .item::before,
+.VPHomeFeatures .items .item::after {
+  display: none;
+}
+
+/* ── the marks the default theme has no place for ───────────────────── */
+
+/**
+ * The release these pages describe, set beside the title. Mono, because a
+ * version is one of the product's own tokens, and faint, because it is a label
+ * on the title rather than a second title.
+ */
+.mg-version-mark {
+  font-family: var(--vp-font-family-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--mg-faint);
+  border: 1px solid var(--mg-rule);
+  padding: 2px 5px;
+  margin-left: 10px;
+  white-space: nowrap;
+}
+
+/**
+ * Section and position, printed above the title the way the panel labels a row.
+ * The h1's own rule closes the block, so this one carries none.
+ */
+.mg-eyebrow {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-family: var(--vp-font-family-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mg-faint);
+  margin-bottom: 14px;
+}
+
+/* ── prev/next: rows, not a pair of cards ───────────────────────────── */
+
+/* The next/prev link is a cell like every other thing on the page, so it is
+   drawn with a rule around it rather than left as a bare label.
+ *
+ * The earlier objection to this was real: two bordered cells with a grid gap,
+ * sitting flush under the footer's own rule, read as one broken second line.
+ * The footer's `padding-top` above is what answers it — the cells stand clear
+ * of the rule instead of hanging off it.
+ */
+/* The theme draws its own rule on `.prev-next` as well, which stacked with the
+   footer's into two lines. One rule carries the boundary; the clearance below
+   it is the footer's padding, so the inner block contributes neither. */
+.VPDocFooter .prev-next {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.VPDocFooter .pager-link {
+  border: 1px solid var(--mg-rule);
+  padding: 14px 16px;
+}
+
+.VPDocFooter .pager-link:hover {
+  border-color: var(--mg-ink);
+  background: transparent;
+}
+
+.VPDocFooter .pager-link.next {
+  text-align: right;
+}
+
+/* ── home: the written half ─────────────────────────────────────────── */
+
+/**
+ * The prose under the grid is centred in the page column rather than hung from
+ * its left edge: 920px of measure against a 1356px column left a third of every
+ * row empty, and the section read as pushed aside.
+ *
+ * The hero and the grid stay full-bleed inside that column — they are cells,
+ * and a cell uses the whole row. Only the prose, which has a measure to keep,
+ * is centred within it.
+ */
+.VPHome .vp-doc {
+  max-width: 920px;
+  margin-inline: auto;
+  padding: 0 var(--mg-gutter);
+}
+
+/* The grid's own last rule already closes the section above, so the first
+   heading here must not draw a second one at a different width. VitePress wraps
+   the rendered markdown in two anonymous divs, so this matches on the heading
+   being first inside whatever it lands in rather than on the chain. */
+.VPHome .vp-doc h2:first-child {
+  margin-top: 56px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.VPHome .vp-doc h3 {
+  font-family: var(--vp-font-family-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mg-faint);
+  margin-top: 30px;
+}
+
+/* A link that is the next thing to do, drawn as the row it leads to. */
+.mg-cta {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 10px 18px;
+  border: 1px solid var(--mg-rule-strong);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mg-ink);
+  text-decoration: none;
+  transition: border-color var(--mg-fast) linear;
+}
+
+.mg-cta:hover {
+  border-color: var(--mg-ink);
+}
+
+/* Starting points, as cells of the same grid the features use. */
+.mg-starters {
+  display: grid;
+  gap: 0;
+  margin: 20px 0 8px;
+  border-top: 1px solid var(--mg-rule);
+}
+
+@media (min-width: 640px) {
+  .mg-starters {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.mg-starters a {
+  display: block;
+  padding: 18px 20px 20px;
+  border-bottom: 1px solid var(--mg-rule);
+  text-decoration: none;
+  transition: background-color var(--mg-fast) linear;
+}
+
+@media (min-width: 640px) {
+  .mg-starters a:first-child {
+    border-right: 1px solid var(--mg-rule);
+  }
+}
+
+.mg-starters a:hover {
+  background: var(--mg-paper-sunk);
+}
+
+.mg-starters strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--mg-ink);
+}
+
+.mg-starters span {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--mg-muted);
 }

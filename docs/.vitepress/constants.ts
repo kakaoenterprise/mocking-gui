@@ -5,6 +5,15 @@ export const URLS = {
   GITHUB_DISCUSSIONS: 'https://github.com/kakaoenterprise/mocking-gui/discussions',
   NPM: 'https://www.npmjs.com/package/@kakaocloud/mocking-gui',
   DOCS: '/mocking-gui/',
+  /**
+   * The showcase app, published beside the docs by `pnpm demo:build`.
+   *
+   * Written without the base — VitePress prepends it — and deliberately left as
+   * a site-relative path so the link follows whichever host the docs are on,
+   * including a fork's Pages. It only exists after a build that ran
+   * `demo:build`; plain `vitepress dev` will 404 on it.
+   */
+  DEMO: '/demo/',
 } as const;
 
 // Link constants in documentation
