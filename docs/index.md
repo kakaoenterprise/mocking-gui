@@ -2,15 +2,16 @@
 layout: home
 hero:
   name: Mocking GUI
-  text: The Mocking GUI for MSW
-  tagline: Manage your API mocks with an intuitive GUI panel.
+  text: Every state your API can return
+  tagline: Empty lists, expired sessions, the 500 that only shows up in production. Switch between them from a panel inside your running app — no server to start, no database to seed, no code to change.
   actions:
     - theme: brand
       text: Get Started
       link: /guide/quick-start
     - theme: alt
-      text: View Examples
-      link: https://github.com/kakaoenterprise/mocking-gui/tree/main/examples
+      text: Try the demo
+      link: /demo/
+      target: _self
 features:
   - title: Visual Management
     details: Manage MSW handlers intuitively with GUI panel. Quickly find APIs with search and filtering capabilities.
@@ -26,61 +27,75 @@ features:
     details: Customize the panel's size and position. Shadow DOM ensures zero style conflicts with your application.
 ---
 
-## What is Mocking GUI?
+## Get it running
 
-**Mocking GUI** is a **GUI library based on MSW (Mock Service Worker)**. It provides an intuitive interface to easily mock and test APIs during development.
+Three steps, and the panel is in your app. The
+[Installation guide](./guide/quick-start) covers Next.js, SSR and the parts this
+page leaves out.
 
-### Key Features
-
-- **Zero Config**: Seamless integration with MSW.
-- **Intuitive Interface**: Manage handlers without complex code.
-- **Swagger Automation**: Generate mocks instantly from OpenAPI/Swagger.
-- **Type Safe**: Full TypeScript support.
-
-### Quick Start
-
-Start by installing the package in your project.
+### 1. Install
 
 ```bash
-pnpm add @kakaocloud/mocking-gui
+pnpm add -D @kakaocloud/mocking-gui
 ```
 
-Initialize MSW configuration:
+### 2. Add MSW's service worker
 
 ```bash
-npx msw init <PUBLIC_DIR> [options]
+npx msw init public
 ```
 
-Wrap your application with `MockingGUIBoundary`:
+### 3. Declare an endpoint, and mount the panel
 
 ```tsx
+// config.ts
+import type { MockingConfig } from '@kakaocloud/mocking-gui';
+
+export const mockConfig: MockingConfig = {
+  mocks: [
+    {
+      name: 'Get User',
+      url: '/api/user',
+      method: 'get',
+      responseVariants: [
+        { name: 'Success', status: 200, body: { id: 1, name: 'John Doe' } },
+        { name: 'Empty', status: 200, body: null },
+        { name: 'Server error', status: 500, body: { message: 'Something went wrong' } },
+      ],
+    },
+  ],
+};
+```
+
+```tsx
+// App.tsx — the dev check matters: without it the panel ships to production.
 import { MockingGUIBoundary } from '@kakaocloud/mocking-gui/browser';
+import { mockConfig } from './config';
+
+const IS_DEV = import.meta.env.DEV;
 
 function App() {
-  return (
-    <MockingGUIBoundary>
-      <YourAppContent />
-    </MockingGUIBoundary>
-  );
+  const content = <AppContent />;
+
+  return IS_DEV ? <MockingGUIBoundary config={mockConfig}>{content}</MockingGUIBoundary> : content;
 }
 ```
 
-<a href="./guide/introduction" class="QuickStartButton">
-  Read the Documentation →
-</a>
+Reload, and `GET /api/user` is a row in the panel. Switch it on, pick which of
+the three responses it returns, give it a two-second delay — the screen follows,
+and nothing in your code moved.
 
-### Examples
+<a class="mg-cta" href="./guide/introduction">Read the documentation →</a>
 
-Check out our examples to get started quickly.
+## Start from a working example
 
-<div class="ExampleGuideCard">
-  <h3>Next.js (App Router)</h3>
-  <p>Example using Next.js App Router with Mocking GUI.</p>
-  <a href="https://github.com/kakaoenterprise/mocking-gui/tree/main/examples/next-app-router" target="_blank">View Example →</a>
-</div>
-
-<div class="ExampleGuideCard">
-  <h3>React (Vite)</h3>
-  <p>Simple React SPA example built with Vite.</p>
-  <a href="https://github.com/kakaoenterprise/mocking-gui/tree/main/examples/react-csr" target="_blank">View Example →</a>
+<div class="mg-starters">
+  <a href="https://github.com/kakaoenterprise/mocking-gui/tree/main/examples/next-app-router" target="_blank" rel="noreferrer">
+    <strong>Next.js (App Router)</strong>
+    <span>The client wrapper and the dev guard, with mock state reaching server components.</span>
+  </a>
+  <a href="https://github.com/kakaoenterprise/mocking-gui/tree/main/examples/react-csr" target="_blank" rel="noreferrer">
+    <strong>React (Vite)</strong>
+    <span>The smallest complete setup: one config file and one boundary.</span>
+  </a>
 </div>
