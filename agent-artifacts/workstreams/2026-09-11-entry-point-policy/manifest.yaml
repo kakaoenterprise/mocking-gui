@@ -18,7 +18,7 @@ agent_assigned:
   phase_4: release-manager
 
 decisions:
-  - ADR-0006-entry-point-policy
+  - ADR-0007-entry-point-policy
 
 risks:
   - name: 'alpha.1 users import from ./testing'

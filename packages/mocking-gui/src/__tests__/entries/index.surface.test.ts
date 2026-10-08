@@ -12,7 +12,7 @@ import type {
 } from '../../index';
 
 /**
- * The root entry is a type-only contract (ADR-0006). It must never export a
+ * The root entry is a type-only contract (ADR-0007). It must never export a
  * runtime value. The pinned type set is asserted by the type imports above:
  * `tsconfig.test.json` typechecks this file, so a removed type fails lint.
  */

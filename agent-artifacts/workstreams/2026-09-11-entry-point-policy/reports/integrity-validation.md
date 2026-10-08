@@ -6,7 +6,7 @@ status: complete
 run_id: 2026-09-11-entry-point-policy
 date: 2026-09-11
 owner: 'Testing Specialist (Claude)'
-related_adr: ADR-0006-entry-point-policy
+related_adr: ADR-0007-entry-point-policy
 ---
 
 # Integrity Validation Report

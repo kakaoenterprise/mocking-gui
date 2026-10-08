@@ -11,7 +11,7 @@ import * as experimental from '../../experimental';
  * or `document` at module load. A regression there fails this file.
  *
  * Adding, moving (graduating) or removing a symbol must change this list — that
- * is the point. See ADR-0006.
+ * is the point. See ADR-0007.
  *
  * Deliberately excluded, and why:
  * - `defineHandler` (singular) stays internal because `defineRegistry(...).get(name)`

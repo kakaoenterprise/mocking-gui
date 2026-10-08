@@ -75,6 +75,7 @@ export type HandlerStoreAction = {
   updateScenario: (id: string, configs: Record<string, StoredHandlerVariants>) => void;
   deactivateScenario: () => void;
   importScenario: (scenario: Scenario) => boolean;
+  importScenarios: (scenarios: Scenario[]) => number;
 
   /**
    * Draft related actions

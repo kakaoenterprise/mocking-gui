@@ -267,7 +267,7 @@ import * as experimental from '../../experimental';
  * or `document` at module load. A regression there fails this file.
  *
  * Adding, moving (graduating) or removing a symbol must change this list — that
- * is the point. See ADR-0006.
+ * is the point. See ADR-0007.
  */
 const EXPECTED_RUNTIME_EXPORTS = [
   'applyScenario',
@@ -332,7 +332,7 @@ Expected: FAIL — `Cannot find module '../../experimental'`.
  * Everything exported here is **outside semver guarantees**: a minor release may
  * change or remove it. When a feature graduates it moves to its domain entry
  * (e.g. `@kakaocloud/mocking-gui/scenario`) and stays here as a `@deprecated`
- * re-export for one minor release. See ADR-0006.
+ * re-export for one minor release. See ADR-0007.
  */
 
 /** @experimental Scenario authoring & injection API. Graduates to `./scenario`. */
@@ -436,7 +436,7 @@ import type {
 } from '../../index';
 
 /**
- * The root entry is a type-only contract (ADR-0006). It must never export a
+ * The root entry is a type-only contract (ADR-0007). It must never export a
  * runtime value. The pinned type set is asserted by the type imports above:
  * `tsconfig.test.json` typechecks this file, so a removed type fails lint.
  */
@@ -912,7 +912,7 @@ Sections:
   grep -rl "mocking-gui/testing" src e2e | xargs sed -i '' 's#mocking-gui/testing#mocking-gui/experimental#g; s/defineHandlers/defineRegistry/g'
   ```
 - **New**: `registry.handlers`, `ReadonlyHandlerConfig`/`Scenario` from root, WebdriverIO-shaped drivers in `applyScenario`, per-entry surface tests.
-- **Policy**: link ADR-0006; graduation target `./scenario` in `1.1.0`.
+- **Policy**: link ADR-0007; graduation target `./scenario` in `1.1.0`.
 - **Not in this release**: dynamic `responseVariantsFn` scenarios, Puppeteer helper.
 
 - [ ] **Step 5: Update manifest and commit**

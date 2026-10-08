@@ -3,6 +3,7 @@ import { delay, http, HttpHandler, HttpResponse, passthrough } from 'msw';
 import { HandlerType } from '@mocking-gui-types/handler';
 
 import { initialStoredHandlerVariants } from './core';
+import { toMswPath } from './pathParams';
 import { getHandlerKey, getVariantKey } from '../common/keys';
 
 import type { HandlerState, RawBody, StoredHandlerVariants } from '@mocking-gui-types/handler';
@@ -26,7 +27,7 @@ export const convertToMswHandler = (
       return createSwaggerHandler(handler, storedHandlerConfig);
 
     // Bypass to real server if type is null, etc.
-    return http[handler.method](handler.url, () => passthrough());
+    return http[handler.method](toMswPath(handler.url), () => passthrough());
   });
 };
 
@@ -42,7 +43,7 @@ export const createManualHandler = (
   const { method, url, responseVariants } = handler;
   const { active, delay: delayTime, variant: variantKey = '' } = storedHandlerConfig;
 
-  return http[method](url, async () => {
+  return http[method](toMswPath(url), async () => {
     try {
       const selectedVariant = responseVariants?.find(
         variant => getVariantKey(variant) === variantKey,
@@ -96,7 +97,7 @@ export const createAutoHandler = (
 ): HttpHandler => {
   const { method, url, responseVariantsFn } = handler;
 
-  return http[method](url, async params => {
+  return http[method](toMswPath(url), async params => {
     try {
       // Passthrough if inactive
       if (!storedHandlerConfig.active || !responseVariantsFn) {
@@ -135,7 +136,7 @@ export const createSwaggerHandler = (
   const { method, url, swaggerResponseVariants } = handler;
   const { active, delay: delayTime, variant: variantKey = '' } = storedHandlerConfig;
 
-  return http[method](url, async () => {
+  return http[method](toMswPath(url), async () => {
     try {
       const selectedVariant = swaggerResponseVariants?.find(
         variant => getVariantKey(variant) === variantKey,

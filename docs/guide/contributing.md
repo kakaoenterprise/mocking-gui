@@ -66,7 +66,7 @@ mocking-gui/
 
 1. **Fork & Branch**: Fork the repository and create a new branch.
    - Branch name: `feat/feature-name`, `fix/bug-fix`, etc.
-2. **Commit**: Follow [Conventional Commits](https://www.conventionalcommits.org/) rules.
+2. **Commit**: Follow [Conventional Commits](https://www.conventionalcommits.org/) rules. Git hooks installed by `pnpm install` lint staged files and validate the message automatically; CI re-checks both on the PR.
    - Ex: `feat: add new handler util`, `fix: resolve race condition`
 3. **Code Quality Check**: Ensure your code meets quality standards:
 

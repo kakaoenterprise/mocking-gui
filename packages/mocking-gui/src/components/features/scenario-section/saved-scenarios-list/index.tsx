@@ -22,6 +22,7 @@ const SavedScenariosList = () => {
     updateScenario,
     deactivateScenario,
     importScenario,
+    importScenarios,
   } = useHandlerStore();
   const handlers = useHandlerStore(state => state.handlers);
 
@@ -94,10 +95,7 @@ const SavedScenariosList = () => {
           return;
         }
 
-        let successCount = 0;
-        importedScenarios.forEach(scenario => {
-          if (importScenario(scenario)) successCount++;
-        });
+        const successCount = importScenarios(importedScenarios);
 
         if (successCount === 0) {
           setImportErrorMessage('All scenarios in file already exist.');
@@ -109,7 +107,7 @@ const SavedScenariosList = () => {
         setImportErrorMessage(`Failed to parse JSON file: ${message}`);
       }
     },
-    [importScenario],
+    [importScenarios],
   );
 
   const handleExportScenarios = useCallback(() => {

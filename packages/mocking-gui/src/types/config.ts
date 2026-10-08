@@ -51,10 +51,32 @@ export type MockingConfig = {
   swagger?: SwaggerSourceConfigOption[];
   worker?: WorkerStartOptions;
   /**
-   * Additional MSW RequestHandlers that are not managed by Mocking GUI.
-   * Useful for GraphQL or WebSocket handlers.
+   * Escape hatch: native MSW RequestHandlers passed straight to the worker,
+   * registered AFTER the handlers converted from `mocks` / `swagger`.
+   *
+   * Use only for MSW features Mocking GUI does not provide (`graphql.*`, `ws.*`).
+   * These handlers never enter the handler store, so they are NOT shown in the
+   * GUI panel, NOT toggleable, NOT part of scenarios, and NOT applied by
+   * `setupMockingServer` (browser worker only).
+   *
+   * Every `http.*` handler belongs in `mocks` as a `HandlerConfigOption`.
+   * Do not register the same endpoint here and in `mocks`: the `mocks` entry
+   * answers first (or returns `passthrough()` when disabled), so the copy here
+   * is unreachable.
    */
   onDemandHandlers?: RequestHandler[];
+  /**
+   * Scenario codes to seed the panel with — the same base64 strings the share
+   * button produces and the import box accepts.
+   *
+   * Seeding merges with whatever is already persisted: a code whose scenario id
+   * is already saved is left untouched, so a visitor's own edits survive a
+   * reload. Seeding never activates a scenario either — which one is active is
+   * read from the persisted state, so the panel stays in charge of that.
+   *
+   * An unreadable code is reported and skipped; the rest still load.
+   */
+  scenarios?: string[];
 };
 
 export type MockingServerConfig = {
@@ -70,6 +92,11 @@ export type MockingServerConfig = {
 export interface HandlerConfigOption {
   name: string;
   description?: string;
+  /**
+   * URL to intercept. `:name` at the start of a path segment is a path parameter;
+   * any other colon in the path is a literal (e.g. `/subscriptions/:id:cancel`).
+   * Literal colons are escaped for MSW automatically — do not write `\:`.
+   */
   url: string;
   method: keyof typeof http;
   /**

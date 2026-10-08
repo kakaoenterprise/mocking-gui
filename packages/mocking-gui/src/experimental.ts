@@ -5,7 +5,7 @@
  * Everything exported here is **outside semver guarantees**: a minor release may
  * change or remove it. When a feature graduates it moves to its domain entry
  * (e.g. `@kakaocloud/mocking-gui/scenario`) and stays here as a `@deprecated`
- * re-export for one minor release. See ADR-0006.
+ * re-export for one minor release. See ADR-0007.
  */
 
 /** @experimental Scenario authoring & injection API. Graduates to `./scenario`. */

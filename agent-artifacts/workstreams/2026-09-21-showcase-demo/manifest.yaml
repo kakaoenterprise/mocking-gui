@@ -1,0 +1,43 @@
+version: 1.0.0
+
+# ── Run Metadata ────────────────────────────────────────
+run_id: 2026-09-21-showcase-demo
+workflow: harness-dev-pipeline
+size: medium
+feature_name: Showcase demo app deployed with the docs site
+description: >
+  A new `examples/showcase` app that exercises every Mocking GUI capability in
+  one page (Manual/Auto/Swagger handler types, all five rawBody kinds, delay,
+  passthrough, onDemandHandlers, scenario import), bundled into the existing
+  VitePress docs build so it ships to GitHub Pages at /mocking-gui/demo/ with no
+  new hosting account, no new CI workflow and no plan/ToS exposure.
+created_at: 2026-09-21T00:00:00+09:00
+created_by: ria.ang@kakaoenterprise.com
+
+# ── Status Pointer (state machine) ───────────────────────
+current_phase: 3
+status: verified_pending_pr
+
+# ── Assigned Agents ───────────────────────────────────────
+agent_assigned:
+  phase_1: solution-architect
+  phase_2: frontend-engineer
+  phase_3: testing-specialist
+  phase_4: release-manager
+
+# ── Decision Pointers ────────────────────────────────────
+decisions:
+  - hosting: GitHub Pages via the existing release-docs workflow, not Vercel or CodeSandbox
+  - seeding: localStorage pre-seed for first-time visitors, pending a public default-on API
+
+# ── Risks ──────────────────────────────────────
+risks:
+  - name: 'the demo pre-seeds the library''s internal persistence shape (MOCKING_GUI_HANDLERS) because there is no public way to declare a handler active by default'
+    severity: medium
+    mitigation: 'isolated in examples/showcase/src/mocks/seedDefaults.ts with the coupling documented; remove once a default-on option or applyMockState() exists'
+  - name: 'the demo shares the kakaoenterprise.github.io origin with every other org Pages project, and the sync cookie is written with path=/'
+    severity: low
+    mitigation: 'accepted — sibling Pages projects are static and never read the cookie; cookie sync serves no purpose in a CSR-only app and should become opt-out'
+  - name: 'Vercel Hobby forbids commercial use, which its own definition extends to a paid employee authoring the project'
+    severity: medium
+    mitigation: 'avoided entirely by hosting on GitHub Pages; if a live SSR demo is wanted later, use Netlify/Cloudflare (commercial use permitted) or apply to Vercel''s OSS program'

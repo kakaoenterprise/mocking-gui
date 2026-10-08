@@ -1,13 +1,13 @@
 ---
 version: 1.0.0
-name: 'ADR-0006: Subpath entry policy — type-only root, domain subpaths, and an experimental staging entry'
+name: 'ADR-0007: Subpath entry policy — type-only root, domain subpaths, and an experimental staging entry'
 type: adr
 status: proposed
 run_id: 2026-09-11-entry-point-policy
 description: 'Public API is exposed through domain-named subpaths; root stays type-only; pre-release features ship only from ./experimental and graduate by moving one barrel line'
 ---
 
-# ADR-0006: Subpath entry policy — type-only root, domain subpaths, and an experimental staging entry
+# ADR-0007: Subpath entry policy — type-only root, domain subpaths, and an experimental staging entry
 
 **Status**: Proposed
 **Date**: 2026-09-11

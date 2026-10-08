@@ -43,3 +43,9 @@ yalc-packages
 
 # vite config bundling temp files (retriggers turbo watch if not ignored)
 *.timestamp-*.mjs
+
+# generated demo bundle (built into the docs site by `pnpm demo:build`)
+docs/public/demo/
+
+# test coverage
+coverage/

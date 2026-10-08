@@ -7,7 +7,7 @@ tier: full
 status: active
 origin_run: 2026-09-11-entry-point-policy
 related_pr: https://github.com/kakaoenterprise/mocking-gui/pull/18
-related_adr: ADR-0006
+related_adr: ADR-0007
 ---
 
 # Entry point policy — Spec

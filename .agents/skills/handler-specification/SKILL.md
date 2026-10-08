@@ -25,8 +25,8 @@ The standard pattern for engineers writing Mocking GUI handlers in a format that
 - **Q2. Multiple static response cases exist?** -> **Action**: Configure MANUAL mode with a `responseVariants[]` array.
 - **Q3. Dynamic responses based on request parameters are required?** -> **Action**: Configure AUTO mode with a `responseVariantsFn` function.
 - **Q4. Non-JSON response (HTML, Binary, etc.)?** -> **Action**: Use the `rawBody` field (`kind: 'html' | 'text' | 'binary' | ...`).
-- **Q5. Migrating an existing MSW project?** -> **Action**: Map `http.xxx` call statements 1:1 to `HandlerConfigOption` properties.
-- **Q6. Non-HTTP protocols (GraphQL/WebSocket, etc.) are required?** -> **Action**: Outside the current library scope. Requires a separate raw MSW configuration.
+- **Q5. Migrating an existing MSW project?** -> **Action**: Map every `http.xxx` call 1:1 to `HandlerConfigOption` and register it in `mocks`. Never move `http.*` handlers into `onDemandHandlers` — they would be mocked but invisible in the panel and missing on the server.
+- **Q6. Non-HTTP protocols (GraphQL/WebSocket, etc.) are required?** -> **Action**: Keep the native `graphql.*` / `ws.*` handlers and pass them via `MockingConfig.onDemandHandlers`. Tell the user these will not appear in the panel (by design). Never register an endpoint in both `mocks` and `onDemandHandlers`.
 
 ## 4. Engineering Constraints & Mandates
 

@@ -3,7 +3,7 @@ version: 1.0.0
 name: 'Entry Point Policy Release Briefing'
 description: 'User-facing release briefing for the entry-point restructuring in @kakaocloud/mocking-gui: experimental staging path, defineHandlers→defineRegistry rename, and the graduation policy for the scenario API.'
 run_id: 2026-09-11-entry-point-policy
-related_adr: ADR-0006-entry-point-policy
+related_adr: ADR-0007-entry-point-policy
 ---
 
 # Release Briefing: Entry Point Policy
@@ -43,7 +43,7 @@ grep -rl "defineHandlers" src e2e | xargs perl -pi -e 's/\bdefineHandlers\b/defi
 ## Policy
 
 Experimental/alpha-beta features are staged under `./experimental` until
-graduated. See ADR-0006 (`agent-artifacts/decisions/ADR-0006-entry-point-policy.md`)
+graduated. See ADR-0007 (`agent-artifacts/decisions/ADR-0007-entry-point-policy.md`)
 for the full graduation policy and rationale. Graduation target for the
 scenario API: a dedicated `./scenario` subpath in `1.1.0`.
 
