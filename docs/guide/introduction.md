@@ -14,7 +14,7 @@ Mocking GUI puts a panel on top of [MSW](https://mswjs.io) so you can reach them
 from the running app instead. Pick a different response for an endpoint and the
 screen follows; your code never moves.
 
-> Prefer to see it rather than read it? The <a href="/mocking-gui/demo/" target="_self">live demo</a> is a real app
+> Prefer to see it rather than read it? The <a href="/mocking-gui/demo/" target="_blank" rel="noreferrer">live demo ↗</a> is a real app
 > with no server behind it — open the panel, change what an endpoint returns,
 > and watch the screen follow.
 

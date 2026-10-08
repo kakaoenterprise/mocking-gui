@@ -9,9 +9,10 @@ hero:
       text: Get Started
       link: /guide/quick-start
     - theme: alt
-      text: Try the demo
+      text: Try the demo ↗
       link: /demo/
-      target: _self
+      target: _blank
+      rel: noreferrer
 features:
   - title: Visual Management
     details: Manage MSW handlers intuitively with GUI panel. Quickly find APIs with search and filtering capabilities.
