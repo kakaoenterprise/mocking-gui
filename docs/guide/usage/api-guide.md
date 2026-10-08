@@ -26,6 +26,13 @@ interface MockingConfig {
    * Every http.* handler belongs in `mocks`, not here.
    */
   onDemandHandlers?: RequestHandler[];
+
+  /**
+   * Mirror panel state into the `mocking_gui_sync` cookie read by
+   * `setupMockingServer`. Default `true`. Set `false` in browser-only
+   * projects to keep the cookie off every request.
+   */
+  ssrSync?: boolean;
 }
 ```
 
@@ -76,6 +83,17 @@ const server = await setupMockingServer({
 server.listen(); // Start intercepting requests
 server.close(); // Stop intercepting requests
 ```
+
+#### How `cookie` synchronization works
+
+The GUI panel keeps the browser and the server in step through one cookie, `mocking_gui_sync`.
+
+- It lists only the handlers that are **enabled** in the panel. Each entry is a short hash of the handler key plus the response type and variant, and those two are written only when they differ from the handler's default. Disabled handlers are not sent at all, so the cookie carries the delta from the default state.
+- The server resolves each hash against the handlers it registered from `mocks` and `swagger`. Both sides must therefore be configured with the same handlers (same `url`, `method`, and Swagger `serverUrl`).
+- Every write first removes any `mocking_gui_sync*` cookie a previous write left behind, so stale state never accumulates in the request header.
+- The value is budgeted at 3 800 bytes (roughly 300 enabled handlers). Beyond that, Swagger handler overrides are dropped first and a warning naming them is logged in the browser console; if Manual/Auto overrides alone exceed the budget, trailing ones are dropped too so that the leading ones still sync, with a warning. The budget exists because request headers have a total limit (16 KB in Node, 8 KB in nginx) shared with every other cookie on the site.
+- The value uses only characters that `encodeURIComponent` leaves untouched, so cookie APIs that re-serialize values (such as Next.js `cookies().toString()`) pass it through unchanged.
+- If your project never calls `setupMockingServer`, pass `ssrSync: false` in `MockingConfig`. The cookie is then not written at all, and any `mocking_gui_sync*` cookie an earlier version left behind is removed on the next panel change.
 
 ## Types
 

@@ -24,7 +24,7 @@ export const createMockingServer = async (
   const finalHandlers = mergeHandlersWithSwagger([...mocks], swaggerHandlers);
 
   const finalConfigs: Record<string, StoredHandlerVariants> = cookie
-    ? reconstructHandlerConfigsFromCookie(cookie, {})
+    ? reconstructHandlerConfigsFromCookie(cookie, finalHandlers)
     : {};
 
   const mswHandlers = convertToMswHandler(finalHandlers, finalConfigs);
