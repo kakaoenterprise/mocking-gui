@@ -1,79 +1,157 @@
 import { HandlerType } from '@mocking-gui-types/handler';
 
-import { COOKIE_KEY, getCookie } from '../browser/cookie';
+import { getHandlerKey, hashHandlerKey } from '../common/keys';
+import {
+  COOKIE_KEY,
+  ENTRY_SEPARATOR,
+  FIELD_SEPARATOR,
+  SYNC_FORMAT_PREFIX,
+  charToType,
+  decodeVariant,
+  getCookie,
+} from '../common/syncFormat';
+import { initialStoredHandlerVariants } from '../handler/core';
 
-import type { StoredHandlerVariants } from '@mocking-gui-types/handler';
+import type { HandlerState, StoredHandlerVariants } from '@mocking-gui-types/handler';
+
 /**
- * Retrieves multi-cookie value from cookie string.
- * Supports both single cookie (mocking_gui_sync) and split cookies (mocking_gui_sync_0, _1, etc.)
+ * Reads the raw sync value from the cookie string.
  *
- * @param cookieString - Raw cookie string from request header
- * @returns Concatenated value from all mocking_gui_sync_* cookies
+ * - v2 writes a single `mocking_gui_sync` cookie.
+ * - Legacy (≤ 1.0.6) wrote either a single cookie or `_0.._N` chunks and never
+ *   removed the other form. When both are present the state most likely grew
+ *   (single → chunks), so the chunks are read first; this only matters for the
+ *   first request before the upgraded browser code clears the legacy cookies.
  */
-const getMultiCookieValue = (cookieString: string): string | null => {
-  // Try single cookie (COOKIE_KEY) first for backward compatibility
-  const singleValue = getCookie(cookieString, COOKIE_KEY);
-  if (singleValue) {
-    return singleValue;
-  }
+const readSyncCookieValue = (cookieString: string): string | null => {
+  const single = getCookie(cookieString, COOKIE_KEY);
+  if (single && single.startsWith(SYNC_FORMAT_PREFIX)) return single;
 
-  // Then try multi-cookie format: mocking_gui_sync_0, _1, _2, ...
-  let result = '';
+  let chunked = '';
   for (let index = 0; index < 100; index++) {
-    const key = `${COOKIE_KEY}_${index}`;
-    const value = getCookie(cookieString, key);
-    if (!value) break;
-    result += value;
+    const chunk = getCookie(cookieString, `${COOKIE_KEY}_${index}`);
+    if (!chunk) break;
+    chunked += chunk;
   }
+  if (chunked.length > 0) return chunked;
 
-  return result.length > 0 ? result : null;
+  return single || null;
+};
+
+type HashIndex = Map<string, HandlerState | 'collision'>;
+
+const indexHandlersByHash = (handlers: HandlerState[]): HashIndex => {
+  const index: HashIndex = new Map();
+  handlers.forEach(handler => {
+    const hash = hashHandlerKey(getHandlerKey(handler));
+    index.set(hash, index.has(hash) ? 'collision' : handler);
+  });
+  return index;
+};
+
+const warnSkipped = (reason: string, hashes: string[]) => {
+  if (hashes.length === 0) return;
+  console.warn(
+    `[MockingGUI] Ignored ${hashes.length} sync cookie entr${hashes.length === 1 ? 'y' : 'ies'} ` +
+      `(${reason}): ${hashes.slice(0, 5).join(', ')}${hashes.length > 5 ? ', …' : ''}`,
+  );
+};
+
+const parseV2 = (
+  value: string,
+  handlers: HandlerState[],
+): Record<string, StoredHandlerVariants> => {
+  const configs: Record<string, StoredHandlerVariants> = {};
+  const index = indexHandlersByHash(handlers);
+  const entries = value.slice(SYNC_FORMAT_PREFIX.length).split(ENTRY_SEPARATOR).filter(Boolean);
+
+  const unknown: string[] = [];
+  const collided: string[] = [];
+  const malformed: string[] = [];
+
+  entries.forEach(entry => {
+    const [hash, typeChar, encodedVariant] = entry.split(FIELD_SEPARATOR);
+    const handler = index.get(hash);
+
+    if (!handler) {
+      unknown.push(hash);
+      return;
+    }
+    if (handler === 'collision') {
+      collided.push(hash);
+      return;
+    }
+
+    try {
+      const defaults = initialStoredHandlerVariants(handler);
+      const type = typeChar ? charToType(typeChar) : defaults.type;
+      const variant =
+        encodedVariant === undefined
+          ? defaults.variant
+          : decodeVariant(encodedVariant) || undefined;
+
+      configs[getHandlerKey(handler)] = { ...defaults, active: true, type, variant };
+    } catch {
+      malformed.push(hash);
+    }
+  });
+
+  warnSkipped('no registered handler matches the hash', unknown);
+  warnSkipped('hash collision between registered handlers', collided);
+  warnSkipped('malformed variant encoding', malformed);
+
+  return configs;
+};
+
+const parseLegacy = (value: string): Record<string, StoredHandlerVariants> => {
+  const configs: Record<string, StoredHandlerVariants> = {};
+  const entries: [string, string, string][] = JSON.parse(decodeURIComponent(value));
+
+  entries.forEach(([key, typeChar, variant]) => {
+    if (!key || !typeChar) {
+      console.warn('[MockingGUI] Invalid entry in sync cookie:', [key, typeChar, variant]);
+      return;
+    }
+
+    const type =
+      typeChar === 'M'
+        ? HandlerType.MANUAL
+        : typeChar === 'A'
+          ? HandlerType.AUTO
+          : HandlerType.SWAGGER;
+
+    configs[key] = { active: true, type, variant: variant || undefined };
+  });
+
+  return configs;
 };
 
 /**
- * Reconstructs handler configurations from sync cookies (single or multi-cookie).
- * Used for server-side state synchronization in SSR.
+ * Reconstructs handler configurations from the SSR sync cookie.
  *
- * @param cookieString - Raw cookie string from request header
- * @param baseConfigs - Default configurations if cookie not found
- * @returns Complete handler configurations with synced state applied
+ * @param cookieString - Raw cookie string from the request header
+ * @param handlers - Handlers registered on the server (`mocks` + loaded `swagger`);
+ *                   needed to resolve v2 hash references and restore defaults
+ * @returns Configurations for every handler the cookie marks active. Handlers
+ *          not listed keep their default (inactive) state downstream.
  */
 export const reconstructHandlerConfigsFromCookie = (
   cookieString: string,
-  baseConfigs: Record<string, StoredHandlerVariants> = {},
+  handlers: HandlerState[] = [],
 ): Record<string, StoredHandlerVariants> => {
-  const syncData = getMultiCookieValue(cookieString);
-  if (!syncData) return baseConfigs;
-
-  const finalConfigs = { ...baseConfigs };
+  const value = readSyncCookieValue(cookieString);
+  if (!value) return {};
 
   try {
-    const decodedData = decodeURIComponent(syncData);
-    const parsedEntries: [string, string, string][] = JSON.parse(decodedData);
-
-    parsedEntries.forEach(([key, typeChar, variant]) => {
-      if (!key || !typeChar) {
-        console.warn('[MockingGUI] Invalid entry in sync cookie:', [key, typeChar, variant]);
-        return;
-      }
-
-      const type =
-        typeChar === 'M'
-          ? HandlerType.MANUAL
-          : typeChar === 'A'
-            ? HandlerType.AUTO
-            : HandlerType.SWAGGER;
-
-      finalConfigs[key] = {
-        active: true,
-        type,
-        variant: variant || undefined,
-      };
-    });
+    const isV2 = value.startsWith(SYNC_FORMAT_PREFIX);
+    const configs = isV2 ? parseV2(value, handlers) : parseLegacy(value);
 
     console.log('[MockingGUI] Server-side state reconstructed from cookie', {
-      count: parsedEntries.length,
-      source: syncData.length > 3000 ? 'multi-cookie' : 'single-cookie',
+      count: Object.keys(configs).length,
+      format: isV2 ? 'v2' : 'legacy',
     });
+
+    return configs;
   } catch (error) {
     console.error(
       '[MockingGUI] Failed to parse mocking_gui_sync cookie. ' +
@@ -81,8 +159,6 @@ export const reconstructHandlerConfigsFromCookie = (
         'SSR will use default handler configurations.',
       error,
     );
-    // Return baseConfigs on error (graceful fallback)
+    return {};
   }
-
-  return finalConfigs;
 };

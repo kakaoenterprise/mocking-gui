@@ -1,6 +1,21 @@
-import type { StoredHandlerVariants } from '@mocking-gui-types/handler';
+import { getHandlerKey, hashHandlerKey } from '../common/keys';
+import {
+  COOKIE_BUDGET,
+  COOKIE_KEY,
+  ENTRY_SEPARATOR,
+  FIELD_SEPARATOR,
+  SYNC_FORMAT_PREFIX,
+  encodeVariant,
+  getCookie,
+  isSyncCookieName,
+  listCookieNames,
+  typeToChar,
+} from '../common/syncFormat';
+import { initialStoredHandlerVariants } from '../handler/core';
 
-export const COOKIE_KEY = 'mocking_gui_sync';
+import type { HandlerState, StoredHandlerVariants } from '@mocking-gui-types/handler';
+
+export { COOKIE_BUDGET, COOKIE_KEY, getCookie };
 
 /**
  * Sets a cookie in the browser environment.
@@ -15,99 +30,149 @@ export const setCookie = (name: string, value: string, days: number = 7) => {
 };
 
 /**
- * Retrieves a specific cookie value from the cookie string.
+ * Expires a cookie immediately. Must use the same `path` the writer used.
  */
-export const getCookie = (cookieString: string, name: string): string | null => {
-  const cookieNameEqualSubString = `${name}=`;
-  const cookieArray = cookieString.split(';');
-
-  for (let i = 0; i < cookieArray.length; i++) {
-    let cookiePart = cookieArray[i].trim();
-    if (cookiePart.indexOf(cookieNameEqualSubString) === 0) {
-      return cookiePart.substring(cookieNameEqualSubString.length, cookiePart.length);
-    }
-  }
-  return null;
+export const deleteCookie = (name: string) => {
+  if (typeof document === 'undefined') return;
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
 };
 
 /**
- * Compresses handlerConfigs state and syncs to cookie.
- * Format: [["key", "type(M/A/S)", "variant"], ...]
- *
- * Syncs immediately (no debounce) to ensure SSR consistency.
- * SSR may read cookie during request, so debounce delay causes desynchronization.
- * Performance impact: negligible (~0.1ms per sync)
+ * Removes every cookie this library (any version) may have written:
+ * the single `mocking_gui_sync` and legacy `mocking_gui_sync_N` chunks.
+ * Only names actually present in `document.cookie` are touched.
  */
-type CookieEntry = [key: string, typeChar: string, variant: string];
-
-const SINGLE_COOKIE_LIMIT = 3800;
-const HARD_CAP = 10000;
-
-/**
- * Writes an already-encoded payload as a single cookie or, if it exceeds
- * SINGLE_COOKIE_LIMIT, splits it across multiple cookies.
- */
-const writeEncodedState = (encoded: string) => {
-  if (encoded.length <= SINGLE_COOKIE_LIMIT) {
-    setCookie(COOKIE_KEY, encoded);
-  } else {
-    syncMultiCookie(encoded);
-  }
+export const clearSyncCookies = () => {
+  if (typeof document === 'undefined') return;
+  listCookieNames(document.cookie).filter(isSyncCookieName).forEach(deleteCookie);
 };
 
+type SyncEntry = { key: string; encoded: string; isSwagger: boolean };
+
+const buildEntry = (
+  key: string,
+  config: StoredHandlerVariants,
+  handler: HandlerState | undefined,
+): SyncEntry => {
+  const defaults = handler ? initialStoredHandlerVariants(handler) : null;
+  const typeChar = typeToChar(config.type);
+  const variant = config.variant ?? '';
+
+  const typeDiffers = !defaults || typeToChar(defaults.type) !== typeChar;
+  const variantDiffers = !defaults || (defaults.variant ?? '') !== variant;
+
+  let encoded = hashHandlerKey(key);
+  if (typeDiffers || variantDiffers) {
+    encoded += FIELD_SEPARATOR + (typeDiffers ? typeChar : '');
+  }
+  if (variantDiffers) {
+    encoded += FIELD_SEPARATOR + encodeVariant(variant);
+  }
+
+  return { key, encoded, isSwagger: typeChar === 'S' };
+};
+
+const join = (entries: SyncEntry[]) =>
+  SYNC_FORMAT_PREFIX + entries.map(entry => entry.encoded).join(ENTRY_SEPARATOR);
+
 /**
- * Drops Swagger-type entries (in original order) until the encoded payload
- * fits within HARD_CAP. Manual/Auto entries are always preserved.
+ * Drops Swagger-type entries (in original order) until the encoded payload fits
+ * the budget. Manual/Auto entries are always preserved, so the result can still
+ * exceed the budget when they alone are too large; the caller reports that.
  */
-const truncateEntriesByPriority = (
-  activeEntries: CookieEntry[],
-): { kept: CookieEntry[]; droppedCount: number } => {
-  const priorityEntries = activeEntries.filter(([, typeChar]) => typeChar !== 'S');
-  const swaggerEntries = activeEntries.filter(([, typeChar]) => typeChar === 'S');
+const fitToBudget = (entries: SyncEntry[], budget: number) => {
+  if (join(entries).length <= budget) return { kept: entries, dropped: [] as SyncEntry[] };
 
-  const kept: CookieEntry[] = [...priorityEntries];
-  let droppedCount = 0;
+  const kept = entries.filter(entry => !entry.isSwagger);
+  const dropped: SyncEntry[] = [];
+  let length = join(kept).length;
 
-  for (const entry of swaggerEntries) {
-    const candidateEncoded = encodeURIComponent(JSON.stringify([...kept, entry]));
-    if (candidateEncoded.length > HARD_CAP) {
-      droppedCount += 1;
+  for (const entry of entries) {
+    if (!entry.isSwagger) continue;
+    const next = length + ENTRY_SEPARATOR.length + entry.encoded.length;
+    if (next > budget) {
+      dropped.push(entry);
       continue;
     }
     kept.push(entry);
+    length = next;
   }
 
-  return { kept, droppedCount };
+  // Restore original order so the server applies entries deterministically.
+  const order = new Map(entries.map((entry, index) => [entry, index]));
+  kept.sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0));
+
+  return { kept, dropped };
 };
 
-export const syncStateToCookie = (handlerConfigs: Record<string, StoredHandlerVariants>) => {
+const sampleKeys = (entries: SyncEntry[]) =>
+  entries
+    .slice(0, 5)
+    .map(entry => entry.key)
+    .join(', ');
+
+/**
+ * Encodes the active part of `handlerConfigs` as the v2 sync cookie value.
+ * `handlers` supplies each handler's default type/variant so unchanged values
+ * can be omitted; a key with no registered handler is written explicitly.
+ *
+ * Warns and drops Swagger entries when the result would exceed `budget`.
+ */
+export const encodeSyncState = (
+  handlerConfigs: Record<string, StoredHandlerVariants>,
+  handlers: HandlerState[] = [],
+  budget: number = COOKIE_BUDGET,
+): string => {
+  const handlerByKey = new Map(handlers.map(handler => [getHandlerKey(handler), handler]));
+
+  const entries = Object.entries(handlerConfigs)
+    .filter(([, config]) => config.active)
+    .map(([key, config]) => buildEntry(key, config, handlerByKey.get(key)));
+
+  const { kept, dropped } = fitToBudget(entries, budget);
+  const encoded = join(kept);
+
+  if (dropped.length > 0) {
+    console.warn(
+      `[MockingGUI] Mocking state too large to sync in full. Dropped ${dropped.length} Swagger ` +
+        `handler override(s) to stay within the ${budget} byte cookie budget (e.g. ${sampleKeys(dropped)}). ` +
+        'Manual/Auto handler overrides were preserved. Some handler state may not be ' +
+        'reflected in SSR-rendered output.',
+    );
+  }
+  if (encoded.length > budget) {
+    console.warn(
+      `[MockingGUI] Mocking state (${encoded.length} bytes) exceeds the ${budget} byte cookie ` +
+        `budget even with every Swagger override dropped: ${kept.length} Manual/Auto overrides ` +
+        'are active. The browser may reject the cookie and SSR will then fall back to defaults. ' +
+        'Disable some handlers to restore SSR synchronization.',
+    );
+  }
+
+  return encoded;
+};
+
+/**
+ * Syncs handlerConfigs to the SSR sync cookie.
+ *
+ * Every write first removes all cookies previous writes (of any version) left
+ * behind, then writes exactly one cookie — or none when nothing is active —
+ * so the request header never accumulates stale state (issue #45).
+ *
+ * Syncs immediately (no debounce) to ensure SSR consistency.
+ */
+export const syncStateToCookie = (
+  handlerConfigs: Record<string, StoredHandlerVariants>,
+  handlers: HandlerState[] = [],
+) => {
   if (typeof window === 'undefined') return;
 
   try {
-    const activeEntries: CookieEntry[] = Object.entries(handlerConfigs)
-      .filter(([_, config]) => config.active)
-      .map(([key, config]) => {
-        const typeChar = config.type?.[0] || 'M'; // Manual, Auto, Swagger
-        return [key, typeChar, config.variant || ''];
-      });
+    const encoded = encodeSyncState(handlerConfigs, handlers);
 
-    const encoded = encodeURIComponent(JSON.stringify(activeEntries));
-
-    if (encoded.length <= HARD_CAP) {
-      // Tiers 1-2: fits as-is, single cookie or chunked.
-      writeEncodedState(encoded);
-    } else {
-      // Tier 3: size limit exceeded. Truncate by priority, then warn instead of throwing.
-      const { kept, droppedCount } = truncateEntriesByPriority(activeEntries);
-
-      console.warn(
-        `[MockingGUI] Mocking state too large (${encoded.length} bytes) to sync in full. ` +
-          `Dropped ${droppedCount} Swagger-type handler override(s) to fit within the ${HARD_CAP} ` +
-          'byte limit. Manual/Auto handler overrides were preserved. Some handler state may not ' +
-          'be reflected in SSR-rendered output.',
-      );
-
-      writeEncodedState(encodeURIComponent(JSON.stringify(kept)));
+    clearSyncCookies();
+    if (encoded !== SYNC_FORMAT_PREFIX) {
+      setCookie(COOKIE_KEY, encoded);
     }
   } catch (error) {
     console.error('[MockingGUI] Failed to sync state to cookie:', error);
@@ -116,20 +181,4 @@ export const syncStateToCookie = (handlerConfigs: Record<string, StoredHandlerVa
       throw error;
     }
   }
-};
-
-/**
- * Splits large state across multiple cookies (mocking_gui_sync_0, _1, etc.)
- * Standard pattern used by Google Analytics and other libraries.
- *
- * @param encoded - URL-encoded cookie value
- */
-const syncMultiCookie = (encoded: string) => {
-  const CHUNK_SIZE = 3000; // Conservative size to account for overhead
-  const chunks = encoded.match(new RegExp(`.{1,${CHUNK_SIZE}}`, 'g')) || [];
-
-  chunks.forEach((chunk, index) => {
-    const cookieKey = `${COOKIE_KEY}_${index}`;
-    setCookie(cookieKey, chunk);
-  });
 };

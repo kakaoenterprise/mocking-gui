@@ -245,9 +245,14 @@ export const useHandlerStore = create<HandlerStoreState & HandlerStoreAction>()(
   ),
 );
 
-// Sync state to cookie on change (Browser side only)
+// Sync state to cookie on change (Browser side only). Fires on every store
+// update; `handlers` lets the writer omit values equal to each handler's default.
+// Updates before `setupInitialState` (e.g. swagger source status) see an empty
+// `handlers` list and write persisted configs explicitly — harmless, since
+// `setupInitialState` rewrites the cookie. Each write also removes cookies left
+// behind by older versions, so the first page load heals them.
 if (typeof window !== 'undefined') {
   useHandlerStore.subscribe(state => {
-    syncStateToCookie(state.handlerConfigs);
+    syncStateToCookie(state.handlerConfigs, state.handlers);
   });
 }
