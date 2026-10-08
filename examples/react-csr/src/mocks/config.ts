@@ -1,10 +1,10 @@
 import { BASE_ENDPOINT } from '@/constants/api';
-import { handlers } from '@/mocks/handlers';
+import { registry } from '@/mocks/handlers';
 
 import type { MockingConfig } from '@kakaocloud/mocking-gui';
 
 export const mockConfig: MockingConfig = {
-  mocks: handlers,
+  mocks: registry.handlers,
   swagger: [
     {
       name: 'Petstore',

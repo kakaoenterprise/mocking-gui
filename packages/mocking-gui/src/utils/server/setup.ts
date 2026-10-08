@@ -1,12 +1,12 @@
 import { setupServer } from 'msw/node';
-import { MockingServerConfig as MockingServerConfig } from '@mocking-gui-types/config';
-
 import { reconstructHandlerConfigsFromCookie } from './state';
 import { isDomRuntime, isNodeRuntime } from '../common/runtime';
 import { convertToMswHandler } from '../handler/convertToMsw';
 import { loadSwaggerHandlers } from '../swagger/load';
 import { mergeHandlersWithSwagger } from '../swagger/merge';
 
+import type { MockingServerConfig as MockingServerConfig } from '@mocking-gui-types/config';
+import type { HandlerConfigOption } from '@mocking-gui-types/config';
 import type { StoredHandlerVariants } from '@mocking-gui-types/handler';
 import type { SetupServer } from 'msw/node';
 
@@ -21,7 +21,10 @@ export const createMockingServer = async (
   const { mocks = [], swagger = [], cookie } = config;
 
   const swaggerHandlers = (await Promise.all(swagger.map(loadSwaggerHandlersSafe))).flat();
-  const finalHandlers = mergeHandlersWithSwagger([...mocks], swaggerHandlers);
+  const finalHandlers = mergeHandlersWithSwagger(
+    [...mocks] as HandlerConfigOption[],
+    swaggerHandlers,
+  );
 
   const finalConfigs: Record<string, StoredHandlerVariants> = cookie
     ? reconstructHandlerConfigsFromCookie(cookie, finalHandlers)

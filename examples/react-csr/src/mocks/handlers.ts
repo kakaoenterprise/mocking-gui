@@ -1,8 +1,8 @@
+import { defineRegistry } from '@kakaocloud/mocking-gui/experimental';
+
 import { BASE_ENDPOINT } from '@/constants/api';
 
-import type { HandlerConfigOption } from '@kakaocloud/mocking-gui';
-
-export const handlers: HandlerConfigOption[] = [
+export const handlers = [
   {
     name: 'User API',
     url: `${BASE_ENDPOINT}/user/:username`,
@@ -35,4 +35,10 @@ export const handlers: HandlerConfigOption[] = [
       },
     ],
   },
-];
+] as const;
+
+/**
+ * One declaration for two consumers: `registry.handlers` feeds
+ * `MockingConfig.mocks`; `registry.pick(...)` authors scenarios.
+ */
+export const registry = defineRegistry(handlers);

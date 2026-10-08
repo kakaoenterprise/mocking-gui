@@ -19,6 +19,11 @@
       "import": "./dist/server.js",
       "require": "./dist/server.cjs"
     },
+    "./experimental": {
+      "types": "./dist/experimental.d.ts",
+      "import": "./dist/experimental.js",
+      "require": "./dist/experimental.cjs"
+    },
     "./style.css": "./dist/mocking-gui.css"
   },
   "typesVersions": {
@@ -31,6 +36,9 @@
       ],
       "server": [
         "dist/server.d.ts"
+      ],
+      "experimental": [
+        "dist/experimental.d.ts"
       ]
     }
   },
@@ -45,14 +53,15 @@
   "scripts": {
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "lint": "tsc --noEmit && eslint .",
+    "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json && eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "msw:init": "npx msw init public/ --save",
     "release": "release-it --ci",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck:tests": "tsc --noEmit -p tsconfig.test.json"
   },
   "keywords": [
     "msw",
