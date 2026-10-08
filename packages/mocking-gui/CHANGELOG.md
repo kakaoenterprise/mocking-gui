@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.9](https://github.com/kakaoenterprise/mocking-gui/compare/v1.0.8...v1.0.9) (2026-10-08)
+
+### Features
+
+- **experimental:** add ./experimental staging entry and entry point policy (ADR-0006) ([#22](https://github.com/kakaoenterprise/mocking-gui/issues/22)) ([1c46b24](https://github.com/kakaoenterprise/mocking-gui/commit/1c46b24a4bfcb38e98d53f30c32fa021a852773a)), references [#18](https://github.com/kakaoenterprise/mocking-gui/issues/18)
+
 ## [1.0.8](https://github.com/kakaoenterprise/mocking-gui/compare/v1.0.7...v1.0.8) (2026-10-08)
 
 ### Bug Fixes
