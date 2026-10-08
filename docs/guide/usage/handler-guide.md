@@ -1,6 +1,8 @@
 # Handler Guide
 
-This guide explains how to write handlers for Mocking GUI.
+You know which endpoint you want to mock. What you have to decide is the shape
+of its answer — a fixed list of responses, one computed from the request, or
+something that is not JSON at all.
 
 ## Basic Structure
 
@@ -122,10 +124,10 @@ import { graphql, HttpResponse } from 'msw';
 import type { MockingConfig } from '@kakaocloud/mocking-gui';
 
 export const mockConfig: MockingConfig = {
-  // ✅ Every http.* handler belongs here — visible and controllable in the panel
+  // ✓ Every http.* handler belongs here — visible and controllable in the panel
   mocks: [userHandlers, orderHandlers].flat(),
 
-  // ✅ Only what Mocking GUI cannot express
+  // ✓ Only what Mocking GUI cannot express
   onDemandHandlers: [
     graphql.query('GetViewer', () => HttpResponse.json({ data: { viewer: { id: '1' } } })),
   ],
@@ -138,11 +140,11 @@ export const mockConfig: MockingConfig = {
 
 | Behavior                                     | `mocks` (`HandlerConfigOption`) | `onDemandHandlers` (native MSW) |
 | -------------------------------------------- | ------------------------------- | ------------------------------- |
-| Listed in the API tab of the panel           | ✅                              | ❌ Never                        |
-| Toggle on/off, pick variant, add delay       | ✅                              | ❌ Always on, as you wrote it   |
-| Included in Scenarios                        | ✅                              | ❌                              |
-| Applied on the server (`setupMockingServer`) | ✅                              | ❌ Browser worker only          |
-| Supports `graphql.*` / `ws.*`                | ❌                              | ✅                              |
+| Listed in the API tab of the panel           | Yes                             | No Never                        |
+| Toggle on/off, pick variant, add delay       | Yes                             | No Always on, as you wrote it   |
+| Included in Scenarios                        | Yes                             | No                              |
+| Applied on the server (`setupMockingServer`) | Yes                             | No Browser worker only          |
+| Supports `graphql.*` / `ws.*`                | No                              | Yes                             |
 
 > [!WARNING]
 > A handler that is in `onDemandHandlers` but not in the panel is **not a bug** — it is the defining property of `onDemandHandlers`. If you expected to see it in the panel, it belongs in `mocks`.

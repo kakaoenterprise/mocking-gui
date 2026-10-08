@@ -1,6 +1,7 @@
 # API Reference
 
-Definitions of key types and interfaces used in Mocking GUI.
+You are writing `config.ts` and need to know what a field is called or what it
+accepts. Every type the library exports is here.
 
 ## Configuration
 
@@ -33,11 +34,11 @@ interface MockingConfig {
 
 | Behavior                              | `mocks` | `onDemandHandlers` |
 | ------------------------------------- | ------- | ------------------ |
-| Visible / controllable in the panel   | ✅      | ❌                 |
-| Included in Scenarios                 | ✅      | ❌                 |
-| Applied by `setupMockingServer` (SSR) | ✅      | ❌                 |
+| Visible / controllable in the panel   | Yes     | No                 |
+| Included in Scenarios                 | Yes     | No                 |
+| Applied by `setupMockingServer` (SSR) | Yes     | No                 |
 | Registration order in MSW             | first   | after `mocks`      |
-| `graphql.*` / `ws.*` support          | ❌      | ✅                 |
+| `graphql.*` / `ws.*` support          | No      | Yes                |
 
 Because `mocks` is registered first and a disabled `mocks` entry returns `passthrough()`, registering the same endpoint in both places makes the `onDemandHandlers` copy unreachable. See the [Handler Guide](./handler-guide#escape-hatch-ondemandhandlers) for the migration rule.
 

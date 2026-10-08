@@ -4,7 +4,7 @@ Mocking GUI goes beyond being a simple library — it is an **Agentic Harness** 
 
 The harness operates across two professional tracks: core library development and solution engineering. All agents work with deep expertise in Mocking GUI's core architecture and browser/frontend engineering.
 
-## 🏗️ 1. Core Development Track
+## 1. Core Development Track
 
 An internal engineering pipeline responsible for the completeness and architecture of the Mocking GUI library itself.
 
@@ -40,7 +40,7 @@ agent-artifacts/workstreams/2026-07-01-ssr-state-sync/
 
 Once the spec is approved, it is copied to `agent-artifacts/specs/{feature}.md` as the living, canonical version (the run's `spec.md` stays frozen as history). Any architecture decision made along the way is recorded once, globally, in `agent-artifacts/decisions/ADR-{NNNN}-{slug}.md` and indexed in `decisions/INDEX.md` — so a decision made in one run is discoverable and reusable by every later run. Bug fixes and small changes skip this full structure and instead get a single `agent-artifacts/workstreams/{date}-{slug}/RUN.md` covering decision, approval, and log in one file.
 
-## 🚀 2. Solution Engineering Track
+## 2. Solution Engineering Track
 
 A strategic support pipeline for successfully adopting Mocking GUI in user projects and building a productive mock ecosystem.
 
@@ -51,7 +51,7 @@ A strategic support pipeline for successfully adopting Mocking GUI in user proje
 3. **Professional Mock Architecture**: Applies the Handlers / Constants / Factories layer separation principle for a maintainable data environment.
 4. **Skill & Reference Deployment**: Distributes project-specific agent skill sets and technical references to maximize collaboration efficiency.
 
-## 🧠 Shared Knowledge Base
+## Shared Knowledge Base
 
 Both tracks serve different purposes but share the same level of expertise in **Mocking GUI interfaces and frontend engineering**:
 
