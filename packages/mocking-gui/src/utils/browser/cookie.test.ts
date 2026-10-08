@@ -1,400 +1,396 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { syncStateToCookie, getCookie, COOKIE_KEY } from './cookie';
-import { HandlerType } from '../../types/handler';
 
-import type { StoredHandlerVariants } from '../../types/handler';
+import {
+  syncStateToCookie,
+  getCookie,
+  COOKIE_KEY,
+  COOKIE_BUDGET,
+  encodeSyncState,
+  setSsrSyncEnabled,
+} from './cookie';
+import { installCookieStore } from '../../test/cookieStore';
+import { HandlerType } from '../../types/handler';
+import { getHandlerKey, hashHandlerKey } from '../common/keys';
+
+import type { HandlerState, StoredHandlerVariants } from '../../types/handler';
 
 /**
- * Cookie synchronization tests
- * Validates: debounce removal, multi-cookie support, error handling
+ * Cookie synchronization tests (issue #45)
+ * Validates: v2 compact format, default omission, cleanup of previous cookies,
+ * single-cookie budget, priority truncation, error handling
  */
 
+const ORIGIN = 'https://api.example.com';
+
+const manualHandler: HandlerState = {
+  name: 'Get Users',
+  method: 'get',
+  url: `${ORIGIN}/users`,
+  responseVariants: [
+    { name: '200-default', status: 200, body: [] },
+    { name: '400-error', status: 400, body: {} },
+  ],
+};
+const swaggerHandler: HandlerState = {
+  name: 'List Images',
+  method: 'get',
+  url: `${ORIGIN}/v1/images`,
+  swaggerResponseVariants: [
+    { name: '200', status: 200, body: [] },
+    { name: '404', status: 404, body: {} },
+  ],
+};
+const autoHandler: HandlerState = {
+  name: 'Create User',
+  method: 'post',
+  url: `${ORIGIN}/users`,
+  responseVariantsFn: () => ({ name: '201', status: 201, body: {} }),
+};
+/** Supports both Manual and Swagger: default type is Manual */
+const dualHandler: HandlerState = {
+  name: 'Get Flavor',
+  method: 'get',
+  url: `${ORIGIN}/v1/flavors/:id`,
+  responseVariants: [{ name: 'manual-200', status: 200, body: {} }],
+  swaggerResponseVariants: [{ name: '200', status: 200, body: {} }],
+};
+const handlers = [manualHandler, swaggerHandler, autoHandler, dualHandler];
+
+const key = (handler: HandlerState) => getHandlerKey(handler);
+const hash = (handler: HandlerState) => hashHandlerKey(getHandlerKey(handler));
+
+const LONG_VARIANT = '404-with-a-fairly-long-variant-name-to-grow-the-payload';
+
+const fixtures = (count: number, type: HandlerType, variant = '200') => {
+  const list: HandlerState[] = [];
+  const configs: Record<string, StoredHandlerVariants> = {};
+  for (let i = 0; i < count; i++) {
+    const variants = [
+      { name: '200', status: 200, body: {} },
+      { name: LONG_VARIANT, status: 404, body: {} },
+    ];
+    const handler: HandlerState = {
+      name: `${type}-${i}`,
+      method: 'get',
+      url: `${ORIGIN}/v1/projects/:param0/resources-${i}/:param1`,
+      ...(type === HandlerType.SWAGGER
+        ? { swaggerResponseVariants: variants }
+        : { responseVariants: variants }),
+    };
+    list.push(handler);
+    configs[key(handler)] = { active: true, type, variant };
+  }
+  return { list, configs };
+};
+const swaggerFixtures = (count: number, variant = '200') =>
+  fixtures(count, HandlerType.SWAGGER, variant);
+
 describe('syncStateToCookie', () => {
+  let cookies: ReturnType<typeof installCookieStore>;
+
   beforeEach(() => {
-    // Setup: Define window for test environment
-    if (typeof window === 'undefined') {
-      globalThis.window = {} as Window & typeof globalThis;
-    }
-
-    // Setup: Full document.cookie mock with getter/setter
-    const cookieStore: Record<string, string> = {};
-    const cookieDescriptor = {
-      enumerable: true,
-      configurable: true,
-      get() {
-        return Object.entries(cookieStore)
-          .map(([k, v]) => `${k}=${v}`)
-          .join('; ');
-      },
-      set(val: string) {
-        if (!val.includes('=')) return;
-        const [rawKey, ...rest] = val.split('=');
-        const key = rawKey.trim();
-        const valuePart = rest.join('=').split(';')[0];
-        if (key && valuePart) {
-          cookieStore[key] = valuePart;
-        }
-      },
-    } as PropertyDescriptor;
-
-    Object.defineProperty(globalThis, 'document', {
-      value: {},
-      writable: true,
-      configurable: true,
-    });
-    Object.defineProperty(document, 'cookie', cookieDescriptor);
-
-    vi.clearAllMocks();
+    cookies = installCookieStore();
+    setSsrSyncEnabled(true);
+    vi.restoreAllMocks();
   });
 
-  describe('Task 1: Debounce Removal', () => {
-    it('should sync cookie immediately without 300ms delay', () => {
-      const config: Record<string, StoredHandlerVariants> = {
-        'GET./users': {
-          active: true,
-          type: HandlerType.MANUAL,
-          variant: '200-success',
+  describe('ssrSync: false', () => {
+    const activeConfigs = {
+      [key(manualHandler)]: { active: true, type: HandlerType.MANUAL, variant: '200-default' },
+    };
+
+    it('writes no cookie when SSR sync is disabled', () => {
+      setSsrSyncEnabled(false);
+
+      syncStateToCookie(activeConfigs, handlers);
+
+      expect(cookies.names()).toEqual([]);
+    });
+
+    it('removes cookies left by earlier writes when SSR sync is disabled', () => {
+      cookies.seed(COOKIE_KEY, 'v2~abc');
+      cookies.seed(`${COOKIE_KEY}_0`, '%5B%5D');
+      cookies.seed('unrelated', '1');
+      setSsrSyncEnabled(false);
+
+      syncStateToCookie(activeConfigs, handlers);
+
+      expect(cookies.names()).toEqual(['unrelated']);
+    });
+
+    it('resumes writing once SSR sync is enabled again', () => {
+      setSsrSyncEnabled(false);
+      syncStateToCookie(activeConfigs, handlers);
+      setSsrSyncEnabled(true);
+
+      syncStateToCookie(activeConfigs, handlers);
+
+      expect(cookies.names()).toEqual([COOKIE_KEY]);
+    });
+  });
+
+  describe('v2 format', () => {
+    it('writes a single versioned cookie and never writes chunks', () => {
+      syncStateToCookie(
+        {
+          [key(manualHandler)]: { active: true, type: HandlerType.MANUAL, variant: '200-default' },
         },
-      };
-
-      const startTime = performance.now();
-      syncStateToCookie(config);
-      const endTime = performance.now();
-
-      // Verify: Cookie written immediately
-      const cookieValue = getCookie(document.cookie, COOKIE_KEY);
-      expect(cookieValue).not.toBeNull();
-      expect(cookieValue).toContain('200-success');
-
-      // Verify: No significant delay (< 10ms, not 300ms)
-      expect(endTime - startTime).toBeLessThan(10);
-    });
-
-    it('should not debounce multiple rapid updates', () => {
-      const config1: Record<string, StoredHandlerVariants> = {
-        'GET./users': { active: true, type: HandlerType.MANUAL, variant: '200' },
-      };
-      const config2: Record<string, StoredHandlerVariants> = {
-        'GET./users': { active: true, type: HandlerType.MANUAL, variant: '400' },
-      };
-
-      // Rapid calls (no delay between them)
-      syncStateToCookie(config1);
-      const firstValue = getCookie(document.cookie, COOKIE_KEY);
-
-      syncStateToCookie(config2);
-      const secondValue = getCookie(document.cookie, COOKIE_KEY);
-
-      // Verify: Both calls executed immediately (values changed)
-      expect(firstValue).toContain('200');
-      expect(secondValue).toContain('400');
-    });
-  });
-
-  describe('Task 2: Multi-Cookie Split', () => {
-    it('should handle small state with single cookie (≤3800 bytes)', () => {
-      const config: Record<string, StoredHandlerVariants> = {
-        'GET./users': { active: true, type: HandlerType.MANUAL, variant: '200-success' },
-        'POST./users': { active: true, type: HandlerType.AUTO, variant: '201-created' },
-      };
-
-      syncStateToCookie(config);
-
-      // Verify: Single cookie used
-      const singleCookie = getCookie(document.cookie, COOKIE_KEY);
-      expect(singleCookie).not.toBeNull();
-      expect(singleCookie).toContain('200-success');
-
-      // Verify: No multi-cookies for small state
-      const multiCookie = getCookie(document.cookie, `${COOKIE_KEY}_0`);
-      expect(multiCookie).toBeNull();
-    });
-
-    it('should support 100+ handlers without cookie overflow', () => {
-      // Create a moderately large state
-      const config: Record<string, StoredHandlerVariants> = {};
-      for (let i = 0; i < 100; i++) {
-        config[`GET./endpoint-${i}`] = {
-          active: true,
-          type: HandlerType.MANUAL,
-          variant: `200-success`,
-        };
-      }
-
-      syncStateToCookie(config);
-
-      // Verify: Cookie is set (not silent failure)
-      const cookieString = document.cookie;
-      expect(cookieString).toBeTruthy();
-      expect(cookieString.length).toBeGreaterThan(0);
-    });
-
-    it('should verify multi-cookie strategy exists', () => {
-      // This test validates the implementation supports multi-cookie
-      // even if current test environment doesn't fully exercise it
-
-      // The syncMultiCookie function is defined in the module
-      // and is called when encoded size > 3800 bytes
-
-      // Create state that should trigger multi-cookie (moderate size)
-      const config: Record<string, StoredHandlerVariants> = {};
-      for (let i = 0; i < 80; i++) {
-        config[`GET./endpoint-with-very-long-name-${i}`] = {
-          active: true,
-          type: HandlerType.MANUAL,
-          variant: `200-success-with-detailed-response-${i}`,
-        };
-      }
-
-      syncStateToCookie(config);
-
-      // Verify: Encode process completes without errors
-      const cookieString = document.cookie;
-      expect(typeof cookieString).toBe('string');
-    });
-  });
-
-  describe('Task 3: Error Handling', () => {
-    it('should throw error in development mode on invalid config', () => {
-      const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'development';
-
-      const invalidConfig = null as unknown as Record<string, StoredHandlerVariants>;
-
-      expect(() => syncStateToCookie(invalidConfig)).toThrow();
-
-      process.env.NODE_ENV = originalEnv;
-    });
-
-    it('should log error and not throw in production mode', () => {
-      const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'production';
-
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      const invalidConfig = null as unknown as Record<string, StoredHandlerVariants>;
-
-      // Should not throw in production
-      expect(() => syncStateToCookie(invalidConfig)).not.toThrow();
-
-      // Should log error
-      expect(consoleSpy).toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
-      process.env.NODE_ENV = originalEnv;
-    });
-
-    it('should gracefully truncate (not throw) for edge case: too large state (>10KB)', () => {
-      process.env.NODE_ENV = 'development';
-
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-      // Create extremely large state
-      const config: Record<string, StoredHandlerVariants> = {};
-      for (let i = 0; i < 1000; i++) {
-        config[`GET./very-long-endpoint-name-${i}`] = {
-          active: true,
-          type: HandlerType.MANUAL,
-          variant: `200-success-with-very-long-description-${i}`,
-        };
-      }
-
-      // Should not throw - graceful degradation via truncation instead
-      expect(() => syncStateToCookie(config)).not.toThrow();
-      expect(consoleWarnSpy).toHaveBeenCalled();
-
-      consoleWarnSpy.mockRestore();
-      process.env.NODE_ENV = 'production';
-    });
-  });
-
-  describe("Task 4: Graceful Degradation (Truncate, Don't Throw)", () => {
-    it('should sync a payload under 3800B as a single cookie (Tier 1, unchanged)', () => {
-      const config: Record<string, StoredHandlerVariants> = {
-        'GET./users': { active: true, type: HandlerType.MANUAL, variant: '200-success' },
-        'POST./users': { active: true, type: HandlerType.AUTO, variant: '201-created' },
-      };
-
-      syncStateToCookie(config);
-
-      const singleCookie = getCookie(document.cookie, COOKIE_KEY);
-      expect(singleCookie).not.toBeNull();
-      const multiCookie = getCookie(document.cookie, `${COOKIE_KEY}_0`);
-      expect(multiCookie).toBeNull();
-    });
-
-    it('should split a 3800-10000B payload into multi-cookie chunks (Tier 2, unchanged)', () => {
-      const config: Record<string, StoredHandlerVariants> = {};
-      for (let i = 0; i < 80; i++) {
-        config[`GET./endpoint-with-very-long-name-${i}`] = {
-          active: true,
-          type: HandlerType.MANUAL,
-          variant: `200-success-with-detailed-response-${i}`,
-        };
-      }
-
-      const encodedSize = encodeURIComponent(
-        JSON.stringify(
-          Object.entries(config).map(([key, c]) => [key, c.type?.[0] || 'M', c.variant || '']),
-        ),
-      ).length;
-      expect(encodedSize).toBeGreaterThan(3800);
-      expect(encodedSize).toBeLessThanOrEqual(10000);
-
-      syncStateToCookie(config);
-
-      const chunk0 = getCookie(document.cookie, `${COOKIE_KEY}_0`);
-      expect(chunk0).not.toBeNull();
-    });
-
-    it('should truncate Swagger entries and keep all Manual/Auto entries when >10000B', () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-      const config: Record<string, StoredHandlerVariants> = {
-        'GET./manual-1': { active: true, type: HandlerType.MANUAL, variant: 'manual-variant-1' },
-        'GET./auto-1': { active: true, type: HandlerType.AUTO, variant: 'auto-variant-1' },
-      };
-      for (let i = 0; i < 1000; i++) {
-        config[`GET./swagger-endpoint-with-a-fairly-long-name-${i}`] = {
-          active: true,
-          type: HandlerType.SWAGGER,
-          variant: `200-success-with-a-long-description-payload-${i}`,
-        };
-      }
-
-      syncStateToCookie(config);
-
-      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('Dropped'));
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Manual/Auto handler overrides were preserved'),
+        handlers,
       );
 
-      // Reconstruct whichever cookie form was used (single or multi) and verify contents.
-      const single = getCookie(document.cookie, COOKIE_KEY);
-      const chunk0 = getCookie(document.cookie, `${COOKIE_KEY}_0`);
-      let decoded = '';
-      if (single) {
-        decoded = decodeURIComponent(single);
-      } else {
-        let index = 0;
-        let combined = '';
-        let chunk = getCookie(document.cookie, `${COOKIE_KEY}_${index}`);
-        while (chunk !== null) {
-          combined += chunk;
-          index += 1;
-          chunk = getCookie(document.cookie, `${COOKIE_KEY}_${index}`);
-        }
-        decoded = decodeURIComponent(combined);
-      }
-      expect(chunk0 !== null || single !== null).toBe(true);
-
-      const parsed = JSON.parse(decoded) as Array<[string, string, string]>;
-      expect(parsed.some(([key]) => key === 'GET./manual-1')).toBe(true);
-      expect(parsed.some(([key]) => key === 'GET./auto-1')).toBe(true);
-      // Not all 1000 swagger entries could fit.
-      const swaggerCount = parsed.filter(([, typeChar]) => typeChar === 'S').length;
-      expect(swaggerCount).toBeLessThan(1000);
-
-      consoleWarnSpy.mockRestore();
+      expect(cookies.names()).toEqual([COOKIE_KEY]);
+      expect(getCookie(document.cookie, COOKIE_KEY)).toMatch(/^v2~/);
     });
 
-    it('should drop all Swagger entries and still not throw when Manual/Auto alone exceed the cap', () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    it('serializes an active entry with default type and variant as the hash only', () => {
+      const encoded = encodeSyncState(
+        {
+          [key(manualHandler)]: { active: true, type: HandlerType.MANUAL, variant: '200-default' },
+        },
+        handlers,
+      );
 
-      const config: Record<string, StoredHandlerVariants> = {};
-      // Manual/Auto entries alone exceed HARD_CAP (10000 bytes).
-      for (let i = 0; i < 600; i++) {
-        config[`GET./manual-endpoint-with-a-fairly-long-name-${i}`] = {
-          active: true,
-          type: HandlerType.MANUAL,
-          variant: `200-success-with-a-long-description-payload-${i}`,
-        };
-      }
-      // A handful of Swagger entries that should all be dropped.
-      for (let i = 0; i < 5; i++) {
-        config[`GET./swagger-${i}`] = {
-          active: true,
-          type: HandlerType.SWAGGER,
-          variant: `variant-${i}`,
-        };
-      }
-
-      expect(() => syncStateToCookie(config)).not.toThrow();
-      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('Dropped 5'));
-
-      consoleWarnSpy.mockRestore();
+      expect(encoded).toBe(`v2~${hash(manualHandler)}`);
     });
 
-    it('should never throw for a purely size-driven overflow even in development mode', () => {
-      const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'development';
+    it('includes the variant only when it differs from the default', () => {
+      const encoded = encodeSyncState(
+        { [key(manualHandler)]: { active: true, type: HandlerType.MANUAL, variant: '400-error' } },
+        handlers,
+      );
 
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      expect(encoded).toBe(`v2~${hash(manualHandler)}..400-error`);
+    });
 
-      const config: Record<string, StoredHandlerVariants> = {};
-      for (let i = 0; i < 1000; i++) {
-        config[`GET./swagger-endpoint-with-a-fairly-long-name-${i}`] = {
-          active: true,
-          type: HandlerType.SWAGGER,
-          variant: `200-success-with-a-long-description-payload-${i}`,
-        };
-      }
+    it('includes the type only when it differs from the determined default', () => {
+      const encoded = encodeSyncState(
+        { [key(dualHandler)]: { active: true, type: HandlerType.SWAGGER, variant: '200' } },
+        handlers,
+      );
 
-      expect(() => syncStateToCookie(config)).not.toThrow();
-      // Genuine errors still go through console.error; size overflow must not.
-      expect(consoleErrorSpy).not.toHaveBeenCalled();
-      expect(consoleWarnSpy).toHaveBeenCalled();
+      expect(encoded).toBe(`v2~${hash(dualHandler)}.S.200`);
+    });
 
-      consoleWarnSpy.mockRestore();
-      consoleErrorSpy.mockRestore();
-      process.env.NODE_ENV = originalEnv;
+    it('omits inactive entries and keeps active ones in config order', () => {
+      const encoded = encodeSyncState(
+        {
+          [key(manualHandler)]: { active: false, type: HandlerType.MANUAL, variant: '400-error' },
+          [key(swaggerHandler)]: { active: true, type: HandlerType.SWAGGER, variant: '200' },
+          [key(autoHandler)]: { active: true, type: HandlerType.AUTO },
+        },
+        handlers,
+      );
+
+      expect(encoded).toBe(`v2~${hash(swaggerHandler)}~${hash(autoHandler)}`);
+    });
+
+    it('writes type and variant explicitly for a key with no registered handler', () => {
+      const unknownKey = `get.${ORIGIN}/unknown`;
+      const encoded = encodeSyncState(
+        { [unknownKey]: { active: true, type: HandlerType.MANUAL, variant: '200' } },
+        handlers,
+      );
+
+      expect(encoded).toBe(`v2~${hashHandlerKey(unknownKey)}.M.200`);
+    });
+
+    it('writes a variant outside [A-Za-z0-9_-] as marked base64url', () => {
+      const encoded = encodeSyncState(
+        {
+          [key(manualHandler)]: { active: true, type: HandlerType.MANUAL, variant: 'a~b.c d 한글' },
+        },
+        handlers,
+      );
+
+      expect(encoded).toBe(`v2~${hash(manualHandler)}..!YX5iLmMgZCDtlZzquIA`);
+    });
+
+    it('is byte-stable when a cookie API re-encodes the value (Next.js cookies().toString())', () => {
+      const { list, configs } = swaggerFixtures(20, LONG_VARIANT);
+      const encoded = encodeSyncState(
+        {
+          ...configs,
+          [key(manualHandler)]: { active: true, type: HandlerType.MANUAL, variant: 'a~b.c d 한글' },
+          [key(dualHandler)]: { active: true, type: HandlerType.SWAGGER, variant: '200' },
+        },
+        [...list, ...handlers],
+      );
+
+      expect(encodeURIComponent(encoded)).toBe(encoded);
+      expect(decodeURIComponent(encoded)).toBe(encoded);
+      expect(encoded).not.toMatch(/[\s",;\\%]/);
     });
   });
 
-  describe('Integration: SSR Consistency', () => {
-    it('should ensure immediate sync (no 300ms debounce)', () => {
-      const config: Record<string, StoredHandlerVariants> = {
-        'GET./users': { active: true, type: HandlerType.MANUAL, variant: '200' },
+  describe('cleanup of previous cookies (issue #45 defect 1)', () => {
+    it('removes legacy single and chunk cookies left by older versions before writing', () => {
+      cookies.seed(COOKIE_KEY, encodeURIComponent(JSON.stringify([['GET./old', 'M', '200']])));
+      for (let i = 0; i < 6; i++) cookies.seed(`${COOKIE_KEY}_${i}`, 'x'.repeat(3000));
+      cookies.seed('unrelated_cookie', 'keep-me');
+      cookies.seed(`${COOKIE_KEY}_custom`, 'not-ours');
+
+      syncStateToCookie(
+        {
+          [key(manualHandler)]: { active: true, type: HandlerType.MANUAL, variant: '200-default' },
+        },
+        handlers,
+      );
+
+      expect(cookies.names().sort()).toEqual([
+        COOKIE_KEY,
+        `${COOKIE_KEY}_custom`,
+        'unrelated_cookie',
+      ]);
+      expect(cookies.get('unrelated_cookie')).toBe('keep-me');
+    });
+
+    it('leaves exactly one cookie after shrinking and growing the active set', () => {
+      const { list, configs } = swaggerFixtures(300);
+      const subset = (n: number) => Object.fromEntries(Object.entries(configs).slice(0, n));
+
+      syncStateToCookie(subset(200), list);
+      syncStateToCookie(subset(20), list);
+      syncStateToCookie(subset(150), list);
+
+      expect(cookies.names()).toEqual([COOKIE_KEY]);
+      expect(cookies.totalBytes()).toBeLessThanOrEqual(COOKIE_BUDGET + COOKIE_KEY.length);
+    });
+
+    it('clears the cookie when no handler is active', () => {
+      syncStateToCookie(
+        {
+          [key(manualHandler)]: { active: true, type: HandlerType.MANUAL, variant: '200-default' },
+        },
+        handlers,
+      );
+      syncStateToCookie(
+        {
+          [key(manualHandler)]: { active: false, type: HandlerType.MANUAL, variant: '200-default' },
+        },
+        handlers,
+      );
+
+      expect(cookies.names()).toEqual([]);
+    });
+  });
+
+  describe('budget (issue #45 defect 3)', () => {
+    it('fits 300 active Swagger handlers with absolute URLs within the budget', () => {
+      const { list, configs } = swaggerFixtures(300);
+
+      syncStateToCookie(configs, list);
+
+      const value = getCookie(document.cookie, COOKIE_KEY) ?? '';
+      expect(value.length).toBeLessThanOrEqual(COOKIE_BUDGET);
+      expect(value.split('~').length - 1).toBe(300);
+    });
+
+    it('drops Swagger entries first and keeps Manual/Auto entries when over budget', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const { list, configs } = swaggerFixtures(600, LONG_VARIANT);
+      const all = {
+        ...configs,
+        [key(manualHandler)]: { active: true, type: HandlerType.MANUAL, variant: '400-error' },
+        [key(autoHandler)]: { active: true, type: HandlerType.AUTO },
       };
 
-      const startTime = performance.now();
-      syncStateToCookie(config);
-      const syncTime = performance.now() - startTime;
+      syncStateToCookie(all, [...list, ...handlers]);
 
-      // Verify: Synced immediately (not delayed)
-      expect(syncTime).toBeLessThan(10);
+      const value = getCookie(document.cookie, COOKIE_KEY) ?? '';
+      expect(value.length).toBeLessThanOrEqual(COOKIE_BUDGET);
+      expect(value).toContain(`${hash(manualHandler)}..400-error`);
+      expect(value).toContain(hash(autoHandler));
+      expect(cookies.names()).toEqual([COOKIE_KEY]);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toMatch(/Dropped \d+ Swagger/);
+    });
 
-      // Verify: Cookie is available
-      const cookie = getCookie(document.cookie, COOKIE_KEY);
-      expect(cookie).not.toBeNull();
-      expect(cookie).toContain('200');
+    it('keeps the original entry order after truncation', () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const { list, configs } = swaggerFixtures(600, LONG_VARIANT);
+      const entries = Object.entries(configs);
+      const interleaved = Object.fromEntries([
+        ...entries.slice(0, 10),
+        [key(manualHandler), { active: true, type: HandlerType.MANUAL, variant: '400-error' }],
+        ...entries.slice(10),
+      ]);
+
+      const encoded = encodeSyncState(interleaved, [...list, ...handlers]);
+
+      const hashes = encoded
+        .slice(3)
+        .split('~')
+        .map(entry => entry.split('.')[0]);
+      expect(hashes.indexOf(hash(manualHandler))).toBe(10);
+      expect(hashes.slice(0, 10)).toEqual(list.slice(0, 10).map(hash));
+    });
+
+    it('truncates trailing Manual/Auto entries with a warning when they alone exceed the budget', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const { list, configs } = fixtures(600, HandlerType.MANUAL, LONG_VARIANT);
+
+      const encoded = encodeSyncState(configs, list);
+
+      expect(encoded.length).toBeLessThanOrEqual(COOKIE_BUDGET);
+      const hashes = encoded.slice(3).split('~');
+      expect(hashes.length).toBeGreaterThan(0);
+      expect(hashes.map(entry => entry.split('.')[0])).toEqual(
+        list.slice(0, hashes.length).map(hash),
+      );
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toMatch(/Dropped \d+ Manual\/Auto/);
+    });
+
+    it('keeps a Swagger-only prefix that lands exactly on the budget after truncation', () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const { list, configs } = swaggerFixtures(20, LONG_VARIANT);
+      const firstNineteen = Object.fromEntries(Object.entries(configs).slice(0, 19));
+      const prefix = encodeSyncState(firstNineteen, list, Number.POSITIVE_INFINITY);
+
+      const encoded = encodeSyncState(configs, list, prefix.length);
+
+      expect(encoded).toBe(prefix);
     });
   });
-});
 
-describe('getCookie', () => {
-  it('should retrieve single cookie value', () => {
-    const cookieString = 'test_key=test_value; other_key=other_value';
-    const value = getCookie(cookieString, 'test_key');
-    expect(value).toBe('test_value');
-  });
+  describe('error handling', () => {
+    it('throws in development on invalid config', () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'development';
+      vi.spyOn(console, 'error').mockImplementation(() => {});
 
-  it('should return null for non-existent cookie', () => {
-    const cookieString = 'test_key=test_value';
-    const value = getCookie(cookieString, 'non_existent');
-    expect(value).toBeNull();
-  });
+      expect(() => syncStateToCookie(null as never, handlers)).toThrow();
 
-  it('should handle URL-encoded values', () => {
-    const encoded = encodeURIComponent('hello world');
-    const cookieString = `test_key=${encoded}`;
-    const value = getCookie(cookieString, 'test_key');
-    expect(value).toBe(encoded);
-  });
+      process.env.NODE_ENV = originalEnv;
+    });
 
-  it('should handle whitespace in cookie string', () => {
-    const cookieString = 'key1=value1; key2=value2 ; key3=value3';
-    const value = getCookie(cookieString, 'key2');
-    expect(value).toBe('value2');
+    it('logs and does not throw in production when cookie access fails while SSR sync is disabled', () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      Object.defineProperty(document, 'cookie', {
+        configurable: true,
+        get() {
+          throw new Error('SecurityError');
+        },
+      });
+      setSsrSyncEnabled(false);
+
+      expect(() => syncStateToCookie({}, handlers)).not.toThrow();
+      expect(errorSpy).toHaveBeenCalled();
+
+      process.env.NODE_ENV = originalEnv;
+    });
+
+    it('logs and does not throw in production on invalid config', () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      expect(() => syncStateToCookie(null as never, handlers)).not.toThrow();
+      expect(errorSpy).toHaveBeenCalled();
+
+      process.env.NODE_ENV = originalEnv;
+    });
   });
 });

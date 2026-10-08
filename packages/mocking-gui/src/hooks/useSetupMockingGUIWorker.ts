@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { useHandlerStore } from '@store/useHandlerStore';
+import { setSsrSyncEnabled } from '@utils/browser/cookie';
 import MockingGUIWorkerManager from '@utils/browser/workerManager';
 import { convertToMswHandler } from '@utils/handler/convertToMsw';
 import { decodeScenario } from '@utils/scenario';
@@ -18,7 +19,10 @@ const useSetupMockingGUIWorker = (config: MockingConfig = {}) => {
     worker: workerStartOptions = {},
     onDemandHandlers = [],
     scenarios: scenarioCodes = [],
+    ssrSync = true,
   } = config;
+  // Set synchronously so the store subscription sees it before any update.
+  setSsrSyncEnabled(ssrSync);
   const [isWorkerReady, setIsWorkerReady] = useState(false);
   const [isHandlersReady, setIsHandlersReady] = useState(false);
   const [isMockingReady, setIsMockingReady] = useState(false);

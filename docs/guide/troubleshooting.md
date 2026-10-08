@@ -129,6 +129,32 @@ MSW's router (path-to-regexp) only accepts a literal colon when it is escaped as
 
 Since the fix for [#44](https://github.com/kakaoenterprise/mocking-gui/issues/44), write the colon as-is — `…/subscriptions/:subscription_id:cancel` — and Mocking GUI escapes it for MSW when the handler is registered. See [URL format](./usage/handler-guide#url-format). If you had worked around the bug with a trailing `/(cancel)?` group, you can remove it.
 
+---
+
+## Every request fails with `431 Request Header Fields Too Large`
+
+### Symptom
+
+The dev server (Next.js, Vite SSR, …) answers every request — the page, static chunks, and the panel itself — with `431 Request Header Fields Too Large`, so nothing loads. DevTools → Application → Cookies shows `mocking_gui_sync` together with several `mocking_gui_sync_0`, `_1`, … cookies.
+
+### Cause & Solution
+
+Versions up to 1.0.7 could leave stale `mocking_gui_sync*` cookies behind when handlers were toggled, and with a large handler set the request header could exceed Node's default limit (16 KB). Later versions remove their previous cookies on every write and keep the single sync cookie under 4 KB, so this cannot recur once the page has loaded with an upgraded library.
+
+**1. Clear the cookies once**
+
+Because the panel cannot load while the server rejects every request, delete the `mocking_gui_sync*` cookies by hand (DevTools → Application → Cookies → right-click → Delete), then reload. The upgraded library rewrites a single compact cookie on the next change.
+
+**2. Do not rely on raising the Node limit**
+
+```bash
+NODE_OPTIONS=--max-http-header-size=65536 next dev
+```
+
+This hides the symptom but keeps sending stale state to the server and does not help behind a reverse proxy (nginx rejects headers over 8 KB by default). Upgrade the library instead.
+
+---
+
 ## Still having issues?
 
 If the above solutions didn't help, feel free to reach out through the following channels.

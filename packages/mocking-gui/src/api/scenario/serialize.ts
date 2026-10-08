@@ -1,5 +1,5 @@
 import { LOCAL_STORAGE_KEY, PERSIST_VERSION } from '../../constants/key';
-import { COOKIE_KEY, encodeHandlerConfigsToCookieValue } from '../../utils/browser/cookie';
+import { COOKIE_KEY, encodeSyncState } from '../../utils/browser/cookie';
 
 import type { Scenario } from '../../types/handler';
 
@@ -57,8 +57,10 @@ export const serializeScenario = (scenario: Scenario): ScenarioStateEntry => {
 
 /**
  * Serializes a `Scenario` into the same cookie name/value shape
- * `syncStateToCookie` writes at runtime, reusing the extracted pure encoder
- * so client and SSR/test-injection paths cannot drift (Risk 4).
+ * `syncStateToCookie` writes at runtime, reusing the pure v2 encoder
+ * (`encodeSyncState`, ADR-0008) so client and SSR/test-injection paths cannot
+ * drift (Risk 4). No handler list is passed, so every entry is written with
+ * its type and variant explicitly rather than relying on registered defaults.
  */
 /**
  * Internal: used by `applyScenario({ ssr: true })`. Not part of the public
@@ -67,5 +69,5 @@ export const serializeScenario = (scenario: Scenario): ScenarioStateEntry => {
  */
 export const serializeScenarioCookie = (scenario: Scenario): { name: string; value: string } => ({
   name: COOKIE_KEY,
-  value: encodeHandlerConfigsToCookieValue(scenario.configs),
+  value: encodeSyncState(scenario.configs),
 });

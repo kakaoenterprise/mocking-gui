@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 
 import { LOCAL_STORAGE_KEY, PERSIST_VERSION } from '../../../../constants/key';
 import { HandlerType } from '../../../../types/handler';
-import { COOKIE_KEY, encodeHandlerConfigsToCookieValue } from '../../../../utils/browser/cookie';
+import { COOKIE_KEY, encodeSyncState } from '../../../../utils/browser/cookie';
 import { computeActiveScenarioId } from '../../../../utils/scenario';
 import { serializeScenario, serializeScenarioCookie } from '../../serialize';
 
@@ -55,7 +55,7 @@ describe('serializeScenarioCookie', () => {
     const cookie = serializeScenarioCookie(scn);
 
     expect(cookie.name).toBe(COOKIE_KEY);
-    expect(cookie.value).toBe(encodeHandlerConfigsToCookieValue(scn.configs));
+    expect(cookie.value).toBe(encodeSyncState(scn.configs));
   });
 });
 
