@@ -155,6 +155,29 @@
 
 /* ── chrome: the rule is the structure ──────────────────────────────── */
 
+/**
+ * The appearance switch keeps its pill — a switch is a control, and controls in
+ * this product are pills; the panel is full of them. What it does not keep is
+ * the default theme's colours: the knob was the one pure white object on the
+ * page, and the track a blue-grey wash that belongs to no other surface here.
+ */
+.VPNavBar .VPSwitch {
+  background: var(--mg-paper-sunk);
+  border: 1px solid var(--mg-rule);
+}
+
+.VPNavBar .VPSwitch .check {
+  background: var(--mg-paper);
+  border: 1px solid var(--mg-rule-strong);
+  box-shadow: none;
+}
+
+.VPNavBar .VPSwitch .icon,
+.VPNavBar .VPSwitch .icon > span {
+  color: var(--mg-muted);
+}
+
+
 .VPNavBar {
   border-bottom: 1px solid var(--mg-rule);
   background: var(--mg-paper);
@@ -654,28 +677,48 @@
  * One key cap, not two.
  *
  * The default theme draws the pair as a single joined box — the first key
- * carries three sides, the next one closes it — so they must stay adjacent, and
+ * carries three sides, the next one closes it — so they must stay adjacent and
  * both halves have to agree on the rule colour. The fill was
  * `--docsearch-key-gradient`, which is near-white and the only thing on this
  * page that was.
+ *
+ * The two glyphs also disagreed: `⌘` is drawn as `::after` on a key the theme
+ * forces to `font-size: 0`, while `K` is the next key's own text, so they came
+ * out at 11px mono against 12px Inter, with a stray `padding-bottom` pushing
+ * both off centre. One family, one size, centred.
  */
 .DocSearch-Button .DocSearch-Button-Key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 18px;
   margin: 0;
+  padding: 0 5px;
+  font-family: var(--vp-font-family-mono);
+  font-size: 12px;
+  line-height: 1;
   background: var(--mg-paper-sunk);
   border-color: var(--mg-rule);
   color: var(--mg-muted);
 }
 
+/* The join: no padding between the two halves, and the closing edge in the
+   same rule colour as the rest of the cap. */
+.DocSearch-Button .DocSearch-Button-Key:first-child {
+  padding-right: 2px;
+}
+
 .DocSearch-Button .DocSearch-Button-Key + .DocSearch-Button-Key {
+  padding-left: 2px;
+  padding-right: 5px;
   border-right-color: var(--mg-rule);
 }
 
-/* The glyph is drawn by the theme as `::after` on a zero-size key. */
 .DocSearch-Button .DocSearch-Button-Key:first-child::after,
 .mac .DocSearch-Button .DocSearch-Button-Key:first-child::after {
   font-family: var(--vp-font-family-mono);
-  font-size: 11px;
+  font-size: 12px;
+  line-height: 1;
   color: var(--mg-muted);
 }
 
