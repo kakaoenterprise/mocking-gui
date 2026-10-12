@@ -2,14 +2,15 @@
 version: 1.0.0
 name: 'ADR-0003: Overcoming Cookie Size Limits with Multi-Cookie Split'
 type: adr
-status: accepted
+status: superseded
+superseded_by: ADR-0008
 run_id: 2026-07-01-ssr-state-sync
 description: 'Adopting multi-cookie splitting to resolve the 4KB cookie size limit and silent failures'
 ---
 
 # ADR-0003: Overcoming Cookie Size Limits with Multi-Cookie Split
 
-**Status**: Accepted  
+**Status**: Superseded by ADR-0008 (2026-10-08)  
 **Date**: 2026-07-01  
 **Deciders**: System Architect, Frontend Engineer  
 **Affected Stakeholders**: Testing Specialist, library users (microservice-scale)  
