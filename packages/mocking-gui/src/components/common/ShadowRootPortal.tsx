@@ -12,6 +12,36 @@ const ShadowRootPortal = (props: PropsWithChildren<{ styleText?: string }>) => {
   const rootRef = useRef<ShadowRoot | null>(null);
   const [mountNode, setMountNode] = useState<HTMLElement | null>(null);
   const styleRef = useRef<HTMLStyleElement | null>(null);
+  const styleTextRef = useRef(props.styleText);
+
+  /** Puts the stylesheet into the shadow root and marks the mount ready. */
+  const syncStyles = (root: ShadowRoot, styleText: string | undefined) => {
+    const mount = root.querySelector('#mocking-gui-shadow-mount') as HTMLElement | null;
+    if (mount) {
+      mount.setAttribute('data-ready', '');
+    }
+
+    if (!styleText) {
+      if (styleRef.current && styleRef.current.parentNode === root) {
+        styleRef.current.remove();
+      }
+      styleRef.current = null;
+      return;
+    }
+
+    if (!styleRef.current) {
+      const style = document.createElement('style');
+      style.setAttribute('data-mocking-gui-isolated', 'true');
+      style.textContent = styleText;
+      root.appendChild(style);
+      styleRef.current = style;
+      return;
+    }
+
+    if (styleRef.current.textContent !== styleText) {
+      styleRef.current.textContent = styleText;
+    }
+  };
 
   useEffect(() => {
     const host = hostRef.current;
@@ -77,6 +107,11 @@ const ShadowRootPortal = (props: PropsWithChildren<{ styleText?: string }>) => {
     const observer = new MutationObserver(syncDarkMode);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
+    // Style the mount before the panel is portaled into it. Otherwise the panel's
+    // first style pass has no theme variables (black border, transparent
+    // background) and its `transition-all` animates from those on every open.
+    syncStyles(root, styleTextRef.current);
+
     setMountNode(mount);
     return () => {
       observer.disconnect();
@@ -86,34 +121,10 @@ const ShadowRootPortal = (props: PropsWithChildren<{ styleText?: string }>) => {
   }, []);
 
   useIsomorphicLayoutEffect(() => {
+    styleTextRef.current = props.styleText;
     const root = rootRef.current;
     if (!root) return;
-
-    const mount = root.querySelector('#mocking-gui-shadow-mount') as HTMLElement | null;
-    if (mount) {
-      mount.setAttribute('data-ready', '');
-    }
-
-    if (!props.styleText) {
-      if (styleRef.current && styleRef.current.parentNode === root) {
-        styleRef.current.remove();
-      }
-      styleRef.current = null;
-      return;
-    }
-
-    if (!styleRef.current) {
-      const style = document.createElement('style');
-      style.setAttribute('data-mocking-gui-isolated', 'true');
-      style.textContent = props.styleText;
-      root.appendChild(style);
-      styleRef.current = style;
-      return;
-    }
-
-    if (styleRef.current.textContent !== props.styleText) {
-      styleRef.current.textContent = props.styleText;
-    }
+    syncStyles(root, props.styleText);
   }, [props.styleText, mountNode]);
 
   return (
