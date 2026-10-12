@@ -12,7 +12,7 @@ export function ScenarioPresets() {
     try {
       await navigator.clipboard.writeText(code);
       setCopiedId(id);
-      window.setTimeout(() => setCopiedId(null), 2500);
+      window.setTimeout(() => setCopiedId(null), 1500);
     } catch {
       setCopiedId(null);
     }
@@ -44,12 +44,22 @@ export function ScenarioPresets() {
               {/* The code is for sending somewhere else. Importing it back into
                   this page is refused: the id is already saved, because the app
                   seeds these through `config.scenarios`. */}
-              <button
-                onClick={() => handleCopy(scenario.id, code)}
-                className="shrink-0 rounded-md border border-stone-300 px-2.5 py-1.5 text-xs font-medium text-stone-700 transition hover:border-stone-900 hover:text-stone-900"
-              >
-                {copiedId === scenario.id ? 'Copied — paste it in a ticket' : 'Copy scenario code'}
-              </button>
+              <div className="relative shrink-0">
+                <button
+                  onClick={() => handleCopy(scenario.id, code)}
+                  className="rounded-md border border-stone-300 px-2.5 py-1.5 text-xs font-medium text-stone-700 transition hover:border-stone-900 hover:text-stone-900"
+                >
+                  Copy scenario code
+                </button>
+                {/* Confirmation floats above so the button keeps its width. */}
+                <span role="status" aria-live="polite">
+                  {copiedId === scenario.id && (
+                    <span className="pointer-events-none absolute bottom-full right-0 mb-1.5 whitespace-nowrap rounded bg-stone-900 px-2 py-1 text-[11px] font-medium text-white shadow">
+                      Copied!
+                    </span>
+                  )}
+                </span>
+              </div>
             </header>
 
             <div className="space-y-3 px-4 py-3">
