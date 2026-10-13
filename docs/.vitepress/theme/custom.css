@@ -217,6 +217,17 @@
   }
 }
 
+@media (min-width: 1440px) {
+  /* From here VitePress widens the sidebar to fill the left gutter and pushes
+     its items back into the layout column with a matching `padding-left`. The
+     shorthand above would pin that to 40px, leaving the items against the
+     viewport edge in a panel that grows with the window — so keep the gutter
+     and add the 8px this theme insets beyond the default 32px. */
+  .Layout .VPSidebar {
+    padding-left: max(40px, calc((100% - (var(--vp-layout-max-width) - 64px)) / 2 + 8px));
+  }
+}
+
 /**
  * The sidebar is the page's own handler list.
  *
