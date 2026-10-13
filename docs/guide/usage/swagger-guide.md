@@ -1,9 +1,12 @@
 # Swagger Automation
 
-> Automatically API mocking based on Status Codes is supported.
+Most projects have far more endpoints than anyone will write handlers for, and
+the ones nobody got around to are the ones that fail silently in a demo. If the
+API already has an OpenAPI document, the handlers can come from it.
 
-Mocking GUI provides a powerful feature to build a mocking server by loading Swagger/OpenAPI specifications (JSON). <br/>
-Connect your Swagger Config URL, and config-based handlers will be **automatically registered** without manual definition.
+Point the panel at a document URL and handlers are generated from its response
+schemas — registered alongside the ones you wrote by hand, which keep
+precedence.
 
 ## Overview
 
@@ -40,8 +43,8 @@ Each Swagger configuration object (`SwaggerSourceOption`) has the following prop
 
 | Property    | Type     | Description                                                                                                                      | Required |
 | :---------- | :------- | :------------------------------------------------------------------------------------------------------------------------------- | :------- |
-| `name`      | `string` | Name of the Swagger source to distinguish in the panel.                                                                          | ✅ Yes   |
-| `configUrl` | `string` | URL providing the Swagger/OpenAPI specification (JSON).                                                                          | ✅ Yes   |
+| `name`      | `string` | Name of the Swagger source to distinguish in the panel.                                                                          | Yes      |
+| `configUrl` | `string` | URL providing the Swagger/OpenAPI specification (JSON).                                                                          | Yes      |
 | `docsUrl`   | `string` | URL of the human-readable documentation page (e.g., Swagger UI). If set, a link is provided in the swagger panel.                | Optional |
 | `serverUrl` | `string` | The domain (Base URL) of the target server that MSW will actually intercept. If not set, follows `servers` info in Swagger spec. | Optional |
 

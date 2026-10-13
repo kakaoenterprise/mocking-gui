@@ -1,6 +1,7 @@
 # Troubleshooting
 
-Common issues encountered while using the library and how to resolve them.
+Something is not being mocked, and the panel says it should be. These are the
+causes we have actually seen, in the order they are worth checking.
 
 ## Handler is enabled but mock is not applied
 
@@ -16,10 +17,10 @@ The handler's `url` must exactly match the actual request URL. Check whether the
 
 ```typescript
 // Actual request: https://api.example.com/users/123
-// ❌ Does not match
+// ✗ Does not match
 { url: '/users/:id', method: 'get' }
 
-// ✅ Matches
+// ✓ Matches
 { url: 'https://api.example.com/users/:id', method: 'get' }
 ```
 
@@ -38,10 +39,10 @@ Requests are being mocked (you can see mocked responses in the Network tab), but
 `onDemandHandlers` is passed straight to MSW and never enters Mocking GUI's handler store, so by design it is **never shown in the panel**. It exists only for MSW features Mocking GUI does not provide (`graphql.*`, `ws.*`).
 
 ```typescript
-// ❌ http.* handlers here are mocked but invisible and uncontrollable
+// ✗ http.* handlers here are mocked but invisible and uncontrollable
 onDemandHandlers: [http.get('/api/user', () => HttpResponse.json({ id: 1 }))],
 
-// ✅ Convert to HandlerConfigOption and register in mocks
+// ✓ Convert to HandlerConfigOption and register in mocks
 mocks: [
   {
     name: 'Get User',
@@ -83,12 +84,12 @@ If the `configUrl` server does not allow CORS, the browser will fail to fetch it
 The `configUrl` must be the direct URL to the OpenAPI spec JSON, not the Swagger UI page URL.
 
 ```typescript
-// ❌ Swagger UI page URL
+// ✗ Swagger UI page URL
 {
   configUrl: 'https://api.example.com/swagger-ui';
 }
 
-// ✅ OpenAPI JSON URL
+// ✓ OpenAPI JSON URL
 {
   configUrl: 'https://api.example.com/v3/api-docs';
 }

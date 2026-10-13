@@ -3,15 +3,15 @@
 Thank you for your interest in contributing to Mocking GUI! 🙌 <br/>
 We welcome all forms of contribution, including bug reports, feature suggestions, documentation improvements, and code contributions.
 
-## 🐛 Bug Reports
+## Bug Reports
 
 If you find a bug, please create an issue using the Bug Report issue template.
 
-## 🌟 Feature Suggestions
+## Feature Suggestions
 
 If you have a new idea, please use the Feature Request issue template.
 
-## 🚀 Code Contribution
+## Code Contribution
 
 ### Development Environment Setup
 
@@ -91,7 +91,7 @@ mocking-gui/
   - Variables/Functions: `camelCase`
   - Components: `PascalCase`
 
-## 📄 Documentation Contribution
+## Documentation Contribution
 
 We welcome improvements to documentation! Here's how you can contribute to docs:
 

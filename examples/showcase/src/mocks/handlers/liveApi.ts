@@ -1,5 +1,6 @@
 import { PETSTORE_ENDPOINTS } from '@/mocks/constants/endpoints';
 import { createPet } from '@/mocks/factories/report';
+import { createPetstoreUser } from '@/mocks/factories/user';
 
 import type { HandlerConfigOption } from '@kakaocloud/mocking-gui';
 
@@ -39,6 +40,30 @@ export const liveApiHandlers: HandlerConfigOption[] = [
         name: 'Upstream down (502)',
         status: 502,
         body: { code: 502, message: 'Upstream petstore is unreachable.' },
+      },
+    ],
+  },
+  {
+    /**
+     * Shares its key with the handler the Petstore spec generates, so the panel
+     * merges the two into one row: these Manual variants and the spec's Swagger
+     * variants in one dropdown, and the real API behind the toggle. The page's
+     * opening walks a visitor through all three on this row.
+     */
+    name: 'Get user by name',
+    description: 'Manual, Swagger, or the real Petstore — switch between all three here.',
+    url: PETSTORE_ENDPOINTS.USER_BY_NAME,
+    method: 'get',
+    responseVariants: [
+      {
+        name: 'Active user',
+        status: 200,
+        body: createPetstoreUser({ userStatus: 1 }),
+      },
+      {
+        name: 'Inactive user',
+        status: 200,
+        body: createPetstoreUser({ userStatus: 0 }),
       },
     ],
   },

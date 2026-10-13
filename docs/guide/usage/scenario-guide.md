@@ -1,6 +1,8 @@
 # Scenario Guide
 
-Scenarios allow you to group multiple handler configurations into a single set for easy storage and management. You can reproduce complex test environments with just a single click.
+The bug only happens when three endpoints are in a particular state at once, and
+writing that down as reproduction steps asks the next person to rebuild it by
+hand. A scenario is that combination, saved and shareable as one code.
 
 ## Key Features
 

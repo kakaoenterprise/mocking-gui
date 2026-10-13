@@ -286,13 +286,37 @@ function App() {
             Everything you just used comes from one component wrapped around the app, reading the
             handlers you already wrote.
           </p>
-          <pre className="mt-3 overflow-x-auto font-mono text-[11px] leading-relaxed text-stone-700">
-            {`import { MockingGUIBoundary } from '@kakaocloud/mocking-gui/browser';
-
-<MockingGUIBoundary config={{ mocks: handlers }}>
-  <App />
-</MockingGUIBoundary>`}
-          </pre>
+          {/* The one TS snippet on the page, so its tokens are coloured by hand
+              rather than pulling in a highlighter. */}
+          <div className="mt-3 overflow-hidden rounded-md border border-stone-200 bg-stone-50">
+            <pre className="overflow-x-auto p-3 font-mono text-[11px] leading-relaxed text-stone-700">
+              <code>
+                <span className="text-violet-700">import</span> {'{ '}
+                <span className="text-sky-700">MockingGUIBoundary</span>
+                {' } '}
+                <span className="text-violet-700">from</span>{' '}
+                <span className="text-emerald-700">
+                  &apos;@kakaocloud/mocking-gui/browser&apos;
+                </span>
+                {';\n\n'}
+                <span className="text-stone-400">&lt;</span>
+                <span className="text-sky-700">MockingGUIBoundary</span>{' '}
+                <span className="text-amber-700">config</span>
+                {'={{ '}
+                <span className="text-amber-700">mocks</span>
+                {': handlers }}'}
+                <span className="text-stone-400">&gt;</span>
+                {'\n  '}
+                <span className="text-stone-400">&lt;</span>
+                <span className="text-sky-700">App</span>
+                <span className="text-stone-400"> /&gt;</span>
+                {'\n'}
+                <span className="text-stone-400">&lt;/</span>
+                <span className="text-sky-700">MockingGUIBoundary</span>
+                <span className="text-stone-400">&gt;</span>
+              </code>
+            </pre>
+          </div>
         </section>
 
         <footer className="mt-14 border-t border-stone-200 pt-5 text-xs leading-relaxed text-stone-500">

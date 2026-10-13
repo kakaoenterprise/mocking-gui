@@ -7,11 +7,21 @@
  */
 export const MOCK_STATE_STORAGE_KEY = 'MOCKING_GUI_HANDLERS';
 
+export type PersistedHandlerConfig = {
+  active?: boolean;
+  type?: 'Manual' | 'Auto' | 'Swagger' | null;
+  variant?: string;
+  delay?: number;
+};
+
 type PersistedState = {
-  handlerConfigs?: Record<string, { active?: boolean } | undefined>;
+  handlerConfigs?: Record<string, PersistedHandlerConfig | undefined>;
   scenarios?: { id: string }[];
   activeScenarioId?: string | null;
 };
+
+/** The key the panel stores a handler's config under. */
+export const handlerKey = (method: string, url: string) => `${method}.${url}`;
 
 export const readMockState = (): PersistedState => {
   try {

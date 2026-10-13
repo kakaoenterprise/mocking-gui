@@ -25,3 +25,14 @@ export const createUser = ({
 export const createErrorBody = (code: string, message: string, hint?: string): JsonBodyType => ({
   error: { code, message, ...(hint ? { hint } : {}) },
 });
+
+/** A user in the Petstore spec's `User` shape, for the live-API row. */
+export const createPetstoreUser = ({ userStatus }: { userStatus: number }) => ({
+  id: 1001,
+  username: 'user1',
+  firstName: 'Mina',
+  lastName: 'Kim',
+  email: 'mina.kim@example.test',
+  phone: '010-1234-5678',
+  userStatus,
+});
