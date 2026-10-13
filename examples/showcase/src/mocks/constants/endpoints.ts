@@ -44,4 +44,5 @@ export const PETSTORE_DOCS_URL = 'https://petstore3.swagger.io';
 
 export const PETSTORE_ENDPOINTS = {
   FIND_BY_STATUS: `${PETSTORE_BASE}/pet/findByStatus`,
+  USER_BY_NAME: `${PETSTORE_BASE}/user/:username`,
 } as const;
