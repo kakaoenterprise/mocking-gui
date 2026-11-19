@@ -116,7 +116,9 @@ export interface HandlerConfigOption {
    * Function to dynamically generate the response
    * - Can generate response using request parameters, headers, etc.
    */
-  responseVariantsFn?: (info: HttpResolverInfo) => HandlerResponseVariant;
+  responseVariantsFn?: (
+    info: HttpResolverInfo,
+  ) => HandlerResponseVariant | Promise<HandlerResponseVariant>;
   delay?: number;
 }
 
