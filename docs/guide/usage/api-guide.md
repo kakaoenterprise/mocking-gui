@@ -12,7 +12,7 @@ The package is split into subpaths by **domain and runtime**, never by assumed u
 | `@kakaocloud/mocking-gui`              | Shared type contract (types only) | `MockingConfig`, `HandlerConfigOption`, `ReadonlyHandlerConfig`, `SwaggerSourceConfigOption`, `Scenario` |
 | `@kakaocloud/mocking-gui/browser`      | Browser runtime                   | `MockingGUIBoundary`                                                                                     |
 | `@kakaocloud/mocking-gui/server`       | Node / SSR runtime                | `setupMockingServer`                                                                                     |
-| `@kakaocloud/mocking-gui/experimental` | Pre-release features (see below)  | currently: scenario authoring & injection API                                                            |
+| `@kakaocloud/mocking-gui/experimental` | Pre-release features (see below)  | currently: scenario authoring & injection API, standalone mock server                                    |
 
 ### Experimental features
 
@@ -148,6 +148,59 @@ The GUI panel keeps the browser and the server in step through one cookie, `mock
 - The value uses only characters that `encodeURIComponent` leaves untouched, so cookie APIs that re-serialize values (such as Next.js `cookies().toString()`) pass it through unchanged.
 - If your project never calls `setupMockingServer`, pass `ssrSync: false` in `MockingConfig`. The cookie is then not written at all, and any `mocking_gui_sync*` cookie an earlier version left behind is removed on the next panel change.
 
+### `createMockServer` (experimental)
+
+Runs the mocks as an HTTP server outside the app under test. It reads the same `mocks` and scenarios as the worker and `setupMockingServer`, but keeps the mock state **per session**, so one server can serve several test workers, capture jobs or agents at the same time. The app carries no mock code: its API base URL points at the server.
+
+```typescript
+import { createMockServer } from '@kakaocloud/mocking-gui/experimental';
+
+const server = createMockServer({
+  mocks: registry.handlers,
+  scenarios: [listed, empty],
+  baseUrl: 'https://api.example.com', // base the handler urls were written with
+  defaultScenario: 'listed', // optional: serves requests that carry no session value
+});
+
+const { url } = await server.listen(4010); // Node.js 22.3 or later, binds 127.0.0.1 by default
+await server.close();
+
+// Without a socket: answers a web Request (unit tests, other runtimes)
+const response = await server.handle(new Request('http://mock.test/api/users'));
+```
+
+**Which session a request belongs to.** The first match wins:
+
+1. the `x-mogu-session` request header
+2. a `/s/<session id>` path prefix, for an app that can only be given a URL (a built bundle)
+3. the `mogu_session` cookie
+4. the `default` session, when `defaultScenario` is set. Without it the request gets a 400.
+
+**Control API.** Plain HTTP under `/__mogu`, so a test runner, a script and an agent all drive the server the same way.
+
+| Call                                                          | What it does                                                                                                                                              |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /__mogu/health`                                          | Counts of handlers, scenarios and sessions, and the `root` folder the server was started with                                                             |
+| `GET /__mogu/handlers`, `GET /__mogu/scenarios`               | The names the calls below accept                                                                                                                          |
+| `POST /__mogu/sessions`                                       | Creates a session from a `scenario`, from a copy of another session (`from`) or from explicit `configs`. Returns the header, cookie and URL prefix for it |
+| `GET /__mogu/sessions`, `GET` / `DELETE /__mogu/sessions/:id` | Lists the sessions, reads one session's state, removes it                                                                                                 |
+| `PUT /__mogu/sessions/:id/scenario`                           | Replaces the session's scenario and drops its picks                                                                                                       |
+| `POST` / `DELETE /__mogu/sessions/:id/picks`                  | Lays one override over the scenario, or clears all of them                                                                                                |
+| `POST /__mogu/sessions/:id/mark`                              | Labels the requests that follow with a screen name                                                                                                        |
+| `GET /__mogu/sessions/:id/log`                                | The requests the session answered: path, handler, variant, status, duration, and whether a browser or a server sent it                                    |
+| `GET /__mogu/sessions/:id/wait`                               | Responds once a handler has answered the given number of requests                                                                                         |
+
+A pick names a `handler` and one answer: `variant`, `auto: true`, an inline `response` or `fail: 'network'`. It may add `delay` (ms, also valid on its own), `after` (apply only once another handler has been requested) and `times` (stop after that many requests).
+
+```sh
+curl -X POST "$MOCK/__mogu/sessions/$SESSION/picks" -H 'content-type: application/json' \
+  -d '{ "handler": "Users", "response": { "status": 500, "body": { "code": "INTERNAL" } }, "times": 1 }'
+```
+
+- A request that no enabled mock answers gets a **501** with the reason and the nearest handler names. The server never passes a request through to a real backend, and it does not serve Swagger handlers.
+- A handler may define `respond(request, { params })`, which returns a web `Response`. A stream body is sent chunk by chunk, which is how a streaming or file response is mocked.
+- The control API has no authentication, and CORS allows any origin with credentials. Use the server for local development and tests only, and keep the loopback bind.
+
 ## Types
 
 ### `HandlerConfigOption`
@@ -169,7 +222,9 @@ interface HandlerConfigOption {
   /**
    * (Auto Mode) Function to dynamically generate a response based on request info (params, request, etc.)
    */
-  responseVariantsFn?: (info: HttpResolverInfo) => HandlerResponseVariant;
+  responseVariantsFn?: (
+    info: HttpResolverInfo,
+  ) => HandlerResponseVariant | Promise<HandlerResponseVariant>;
 
   /** Default delay time (ms) */
   delay?: number;

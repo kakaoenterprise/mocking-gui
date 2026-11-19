@@ -104,7 +104,7 @@ export const createAutoHandler = (
         return passthrough();
       }
 
-      const { status, body, rawBody } = responseVariantsFn(params);
+      const { status, body, rawBody } = await responseVariantsFn(params);
 
       // Apply Delay
       if (storedHandlerConfig?.delay) {

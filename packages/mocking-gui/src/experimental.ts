@@ -32,3 +32,21 @@ export type {
   VariantName,
 } from './api/scenario';
 export type { Scenario } from './types/handler';
+
+/**
+ * @experimental Mock server that runs outside the app under test and keeps the
+ * mock state per session. Where it graduates to is open. See ADR-0009.
+ */
+export { createMockServer } from './api/standalone';
+
+/** @experimental */
+export type {
+  InlineResponse,
+  LogEntry,
+  MockServer,
+  MockServerAddress,
+  MockServerOptions,
+  PickBody,
+  RespondInfo,
+  StandaloneHandler,
+} from './api/standalone';

@@ -23,6 +23,7 @@ import * as experimental from '../../experimental';
  */
 const EXPECTED_RUNTIME_EXPORTS = [
   'applyScenario',
+  'createMockServer',
   'defineRegistry',
   'defineScenario',
   'extendScenario',

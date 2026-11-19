@@ -1,0 +1,30 @@
+version: 1.0.0
+
+run_id: 2026-11-19-standalone-mock-server
+workflow: harness-dev-pipeline
+size: full
+feature_name: Standalone mock server with per-session state (experimental)
+description: Serve existing mocks and scenarios from a process outside the host app, with the mock state kept per session id and driven over HTTP
+created_at: 2026-11-19T00:00:00+09:00
+created_by: kep-ria-ang
+
+# This run packages a proof of concept that was built and measured before the run
+# folder existed. The phases were not delegated to persona sub-agents and have no
+# gate records. The spec and ADR-0009 are approved, or sent back, in the review of
+# the pull request that adds this folder.
+current_phase: 3
+status: awaiting_approval
+
+decisions:
+  - ADR-0009-standalone-mock-server
+
+risks:
+  - name: 'Browser bundles that use the scenario API now load the mock server code'
+    severity: medium
+    mitigation: 'No Node import in the module graph; entry layout for Node-only pre-release features is an open question in ADR-0009'
+  - name: 'Unauthenticated control API'
+    severity: medium
+    mitigation: 'listen() binds 127.0.0.1 by default; documented as local development and test only'
+  - name: 'Performance figures were taken before the code moved under ./experimental'
+    severity: low
+    mitigation: 'After the move the unit tests, the consumer typecheck and unit tests, and the E2E suite on both paths were run again (reports/integrity-validation.md)'

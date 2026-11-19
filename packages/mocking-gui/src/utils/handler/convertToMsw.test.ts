@@ -86,3 +86,33 @@ describe('convertToMswHandler — colon action paths', () => {
     expect(res?.status).toBe(200);
   });
 });
+
+describe('convertToMswHandler — async Auto resolver', () => {
+  const echo: HandlerState = {
+    name: 'echo',
+    method: 'post',
+    url: 'https://api.example.com/v1/echo',
+    responseVariantsFn: async ({ request }) => ({
+      name: 'resolved',
+      status: 201,
+      body: { echoed: ((await request.json()) as { text: string }).text },
+    }),
+  };
+
+  it('awaits a resolver that reads the request body', async () => {
+    const [msw] = convertToMswHandler([echo], {
+      [getHandlerKey(echo)]: active(HandlerType.AUTO),
+    });
+    const result = await msw.run({
+      request: new Request(echo.url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ text: 'hello' }),
+      }),
+      requestId: 'test',
+    });
+
+    expect(result?.response?.status).toBe(201);
+    expect(await result?.response?.json()).toEqual({ echoed: 'hello' });
+  });
+});
